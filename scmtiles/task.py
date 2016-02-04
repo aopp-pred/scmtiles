@@ -12,6 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import os
 import sys
 import time
 
@@ -23,13 +25,13 @@ from .exceptions import CLIError, CLIHelp, ConfigurationError
 from .grid_manager import decompose_domain
 
 
-class SCMTileTask(object):
+class TileTask(object):
     """A single task."""
 
     #: Rank of the master task, always 0.
     MASTER = 0
 
-    def __init__(self):
+    def __init__(self, runner_class):
         """Create an SCM Tiles task."""
         # Define an MPI communicator.
         self.comm = MPI.COMM_WORLD
@@ -37,8 +39,10 @@ class SCMTileTask(object):
         self.rank = self.comm.Get_rank()
         self.is_master = self.rank == 0
         # Set default null values for domain and config instance variables.
-        self.domain = None
+        self.tile = None
         self.config = None
+        # The class used to construct tile runners.
+        self.runner_class = runner_class
 
     def initialize(self):
         """
@@ -50,42 +54,59 @@ class SCMTileTask(object):
             # the configuration to all workers, as well as assigning a domain
             # for each worker.
             try:
+                print('Initializing tiles...', flush=True)
                 args = get_arg_handler().parse_args(sys.argv[1:])
                 config = SCMTilesConfig.from_file(args.config_file_path)
+                print('- configuration loaded', flush=True)
+                if not os.path.exists(config.output_directory):
+                    os.makedirs(config.output_directory)
+                    msg = '- created output directory "{}"'
+                    print(msg.format(config.output_directory), flush=True)
             except (CLIError, ConfigurationError) as e:
                 # An error was detected either in command line arguments or in
                 # the parseing of the configuration file. Print the error
                 # message and make sure all processes exit with code 0.
-                print(str(e), file=sys.stderr)
-                sys.stderr.flush()
-                self.comm.bcast((True, 1), root=SCMTileTask.MASTER)
-                exit(1)
+                print(str(e), file=sys.stderr, flush=True)
+                self.comm.bcast((True, 1), root=TileTask.MASTER)
+                sys.exit(1)
             except CLIHelp:
                 # CLIHelp is raised when the program was run with the help
                 # option, which should exit with code 0 once the help is
                 # printed to the screen.
-                self.comm.bcast((True, 0), root=SCMTileTask.MASTER)
-                exit(0)
+                self.comm.bcast((True, 0), root=TileTask.MASTER)
+                sys.exit(0)
+            except PermissionError:
+                # If creating the output directory failed then exit with an
+                # error message.
+                msg = 'Cannot create output directory "{}", permission denied.'
+                print(msg.format(config.output_directory), file=sys.stderr,
+                      flush=True)
+                self.comm.bcast((True, 2), root=TileTask.MASTER)
             else:
                 # Broadcast a no error message to all processes.
-                self.comm.bcast((False, None), root=SCMTileTask.MASTER)
-            domains = decompose_domain(config.gridx, config.gridy,
-                                       self.comm.Get_size())
+                self.comm.bcast((False, None), root=TileTask.MASTER)
+            num_processes = self.comm.Get_size()
+            tiles = decompose_domain(config.gridx, config.gridy,
+                                     num_processes)
+            print('- domain tiled for {} processes'.format(num_processes),
+                  flush=True)
         else:
             # Receive an error package from the master process, if an error
             # condition has been encountered by the master process then exit
             # with the provided exit code.
-            error, stat = self.comm.bcast(None, root=SCMTileTask.MASTER)
+            error, stat = self.comm.bcast(None, root=TileTask.MASTER)
             if error:
-                exit(stat)
+                sys.exit(stat)
             # Worker tasks will be given the appropriate configuration and
             # domain objects.
-            domains = None
+            tiles = None
             config = None
         # Use an MPI broadcast to send the configuration object to all tasks.
-        self.config = self.comm.bcast(config, root=SCMTileTask.MASTER)
+        self.config = self.comm.bcast(config, root=TileTask.MASTER)
         # Use an MPI scatter to send one domain to each task.
-        self.domain = self.comm.scatter(domains, root=SCMTileTask.MASTER)
+        self.tile = self.comm.scatter(tiles, root=TileTask.MASTER)
+        if self.is_master:
+            print('- initialization complete', flush=True)
 
     def run(self):
         # do work in here (all tasks)
