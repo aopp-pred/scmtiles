@@ -28,9 +28,11 @@ class ConfigurationError(Exception):
     """A general configuration input error."""
     pass
 
+
 class TileInitializationError(Exception):
     """An error initializing a tile."""
     pass
+
 
 class TileRunError(Exception):
     """An error running a tile."""

@@ -1,12 +1,12 @@
 """Grid decomposition and management."""
 # Copyright 2016 Andrew Dawson
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -55,7 +55,7 @@ class Tile(object):
         """
         Generator of cell information, yielding `Cell` instances for
         each cell in the tile.
-        
+
         """
         for y in range(self._ysize):
             for x in range(self._xsize):
@@ -97,7 +97,7 @@ def decompose_domain(nx, ny, workers):
     row_ends = list(accumulate(rows_per_worker))
     row_starts = [0] + row_ends[:-1]
     tiles = [Tile(i, 0, nx, s, e)
-            for i, (s, e) in enumerate(zip(row_starts, row_ends))]
+             for i, (s, e) in enumerate(zip(row_starts, row_ends))]
     # If a worker is not allocated a tile then return None instead of a
     # Tile instance.
     if len(tiles) < workers:

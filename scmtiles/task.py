@@ -143,7 +143,8 @@ class TileTask(object):
                 # Tiles that failed to run have no information.
                 continue
             if any([cr.outputs is None for cr in tile_result.cell_results]):
-                print('- tile #{:03d} had failed cells:'.format(tile_result.id),
+                print('- tile #{:03d} had failed cells:'.format(
+                          tile_result.id),
                       file=sys.stderr)
                 for cell_result in tile_result.cell_results:
                     if cell_result.outputs is None:
