@@ -1,4 +1,4 @@
-"""Custom exceptions for the SCM Tiles software."""
+"""Utility functions for SCM Tiles."""
 # Copyright 2016 Andrew Dawson
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,25 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-class CLIError(Exception):
-    """Command line argument error."""
-    pass
+import time
 
 
-class CLIHelp(Exception):
-    """Raised when the CLI wants to show help and exit."""
-    pass
-
-
-class ConfigurationError(Exception):
-    """A general configuration input error."""
-    pass
-
-class TileInitializationError(Exception):
-    """An error initializing a tile."""
-    pass
-
-class TileRunError(Exception):
-    """An error running a tile."""
-    pass
+def get_logger(log_file):
+    def _log(message):
+        line = '[{}] {!s}\n'.format(time.strftime('%F %T'), message)
+        log_file.write(line)
+    return _log

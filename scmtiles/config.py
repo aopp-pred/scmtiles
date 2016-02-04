@@ -31,15 +31,21 @@ class SCMTilesConfig(object):
 
     # Sections of the configuration file and the options they should contain.
     _config_template = {'default': (('start_time', parse_date),
+                                    ('forcing_step_seconds', int),
+                                    ('forcing_num_steps', int),
+                                    ('xname', str),
+                                    ('yname', str),
                                     ('gridx', int),
                                     ('gridy', int),
                                     ('input_directory', _to_path),
                                     ('output_directory', _to_path),
                                     ('work_directory', _to_path),
-                                    ('template_directory', _to_path))}
+                                    ('template_directory', _to_path),
+                                    ('input_file_pattern', str))}
 
-    def __init__(self, start_time, gridx, gridy, input_directory,
-                 output_directory, work_directory, template_directory,
+    def __init__(self, start_time, forcing_step_seconds, forcing_num_steps,
+                 xname, yname, gridx, gridy, input_directory, output_directory,
+                 work_directory, template_directory, input_file_pattern,
                  strict=True):
         """
         Create an `SCMTilesConfig` object by specifying configuration
@@ -50,6 +56,10 @@ class SCMTilesConfig(object):
 
         """
         self.start_time = start_time
+        self.forcing_num_steps = forcing_num_steps
+        self.forcing_step_seconds = forcing_step_seconds
+        self.xname = xname
+        self.yname = yname
         # Grid must have positive sizes in x and y directions.
         if strict and (gridx <= 0 or gridy <= 0):
             msg = 'Grid sizes must be >= 1, got gridx={} and gridy={}.'
@@ -68,6 +78,7 @@ class SCMTilesConfig(object):
         self.template_directory = template_directory
         self.work_directory = work_directory
         self.output_directory = output_directory
+        self.input_file_pattern = input_file_pattern
 
     @staticmethod
     def from_file(config_file_path, strict=True):
@@ -111,12 +122,15 @@ class SCMTilesConfig(object):
                     raise ConfigurationError(msg.format(option, ctype))
         return SCMTilesConfig(**config_args, strict=strict)
 
+    def __repr__(self):
+        strings = []
+        for name, _ in SCMTilesConfig._config_template['default']:
+            attr = getattr(self, name)
+            if isinstance(attr, str):
+                strings.append('{}="{}"'.format(name, attr))
+            else:
+                strings.append('{}={!r}'.format(name, attr))
+        return 'SCMTilesConfig({})'.format(', '.join(strings))
+
     def __str__(self):
-        fmt = ('SCMTilesConfig(start_time="{x.start_time}", '
-               'gridx={x.gridx}, '
-               'gridy={x.gridy}, '
-               'input_directory="{x.input_directory}", '
-               'output_directory="{x.output_directory}", '
-               'work_directory="{x.work_directory}", '
-               'template_directory="{x.template_directory}")')
-        return fmt.format(x=self)
+        return repr(self)

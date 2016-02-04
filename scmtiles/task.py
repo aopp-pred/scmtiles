@@ -21,7 +21,8 @@ from mpi4py import MPI
 
 from .cli import get_arg_handler
 from .config import SCMTilesConfig
-from .exceptions import CLIError, CLIHelp, ConfigurationError
+from .exceptions import (CLIError, CLIHelp, ConfigurationError,
+                         TileInitializationError)
 from .grid_manager import decompose_domain
 
 
@@ -109,21 +110,46 @@ class TileTask(object):
             print('- initialization complete', flush=True)
 
     def run(self):
-        # do work in here (all tasks)
-        # ...
+        """Run each task."""
+        # Create a tile runner and run all the jobs for the tile.
+        if self.is_master:
+            print('Running tiles...', flush=True)
+        try:
+            if self.tile is not None:
+                runner = self.runner_class(self.config, self.tile)
+        except TileInitializationError as e:
+            msg = 'ERROR: tile #{:03d} failed to initialize: {!s}'
+            print(msg.format(self.tile.id, e), file=sys.stderr, flush=True)
+            run_info = None
+        else:
+            if self.tile is not None:
+                run_info = runner.run()
+            else:
+                run_info = None
         # Use an MPI gather call to wait for each process to finish.
-        print("[{}]: {!s}".format(self.rank, self.domain))
-        process_complete = self.rank
-        self.run_info = self.comm.gather(process_complete,
-                                         root=SCMTileTask.MASTER)
+        self.run_info = self.comm.gather(run_info, root=TileTask.MASTER)
+        if self.is_master:
+            print('- running tiles complete', flush=True)
 
     def finalize(self):
         if not self.is_master:
-            return None
-        print('master is finalizing')
-        print(self.run_info)
-        # Do stuff here for the master task only:
-        # ...
-        # * Check that each process completed the required number of SCM runs
-        #   successfully
-        # * identify the files required and concatenate with xarray
+            # Only the master needs to finalize.
+            return 0
+        print('Finalizing run...', flush=True)
+        # Inspect run_info to determine if any of the tiles failed.
+        status = 0
+        for tile_result in self.run_info:
+            if tile_result is None:
+                # Tiles that failed to run have no information.
+                continue
+            if any([cr.outputs is None for cr in tile_result.cell_results]):
+                print('- tile #{:03d} had failed cells:'.format(tile_result.id),
+                      file=sys.stderr)
+                for cell_result in tile_result.cell_results:
+                    if cell_result.outputs is None:
+                        status += 1
+                        print('  - failed cell: {!s}'.format(cell_result.cell),
+                              file=sys.stderr)
+                sys.stderr.flush()
+        print('- finalization complete')
+        return status
