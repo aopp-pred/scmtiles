@@ -88,14 +88,21 @@ def decompose_domain(nx, ny, workers):
         A list of `Tile` objects, one for each worker.
 
     """
-    print(workers, type(workers))
     base_rows = ny // workers
     extra_row_workers = ny % workers
     rows_per_worker = [base_rows + 1 if i < extra_row_workers else base_rows
                        for i in range(workers)]
+    # If any of the workers got 0 rows then remove them from the list.
+    rows_per_worker = [r for r in rows_per_worker if r != 0]
     row_ends = list(accumulate(rows_per_worker))
     row_starts = [0] + row_ends[:-1]
-    return [Tile(0, nx, s, e) for (s, e) in zip(row_starts, row_ends)]
+    tiles = [Tile(i, 0, nx, s, e)
+            for i, (s, e) in enumerate(zip(row_starts, row_ends))]
+    # If a worker is not allocated a tile then return None instead of a
+    # Tile instance.
+    if len(tiles) < workers:
+        tiles += [None] * (workers - len(tiles))
+    return tiles
 
 
 if __name__ == '__main__':
