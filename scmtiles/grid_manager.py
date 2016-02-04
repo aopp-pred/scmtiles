@@ -23,23 +23,26 @@ Cell = namedtuple('Cell', ('x', 'y', 'x_global', 'y_global'))
 
 class Tile(object):
     """Representation of a grid tile (sub-domain)."""
-    
-    def __init__(self, start_x, end_x, start_y, end_y):
+
+    def __init__(self, tile_id, start_x, end_x, start_y, end_y):
         """
         Create a `Tile`.
 
         **Arguments:**
 
-        * start_x
-            The start index of this tile in the x-direction (longitude).
-        * end_x
-            The end index of this tile in the x-direction (longitude).
-        * start_y
-            The start index of this tile in the y-direction (latitude).
-        * end_y
-            The end index of this tile in the y-direction (latitude).
+        * tile_id
+            Unique identifier for the tile.
+
+        * start_x, end_x
+            The start and end indices of this tile in the x-direction
+            (longitude).
+
+        * start_y, end_y
+            The start and end indices of this tile in the y-direction
+            (latitude).
 
         """
+        self.id = tile_id
         #: The tile from the full domain reprented by this sub-domain.
         self.xselector = slice(start_x, end_x)
         self.yselector = slice(start_y, end_y)
