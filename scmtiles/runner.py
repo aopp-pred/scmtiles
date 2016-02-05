@@ -16,6 +16,7 @@
 from collections import namedtuple
 from datetime import timedelta
 from os.path import join as pjoin
+from tempfile import mkdtemp
 
 import xray as xr
 
@@ -66,6 +67,24 @@ class TileRunner(object):
     def get_cell(self, cell):
         selector = {self.config.xname: cell.x, self.config.yname: cell.y}
         return self._tile_data.isel(**selector)
+
+    def create_run_directory(self):
+        """
+        Create a temporary run directory.
+
+        **Returns:**
+
+        * run_directory
+            The path to the created directory.
+
+        """
+        try:
+            run_directory = mkdtemp(dir=self.config.work_directory,
+                                    prefix='run.')
+        except PermissionError:
+            msg = 'Cannot create run directory "{}", permission denied.'
+            raise TileRunError(msg.format(run_directory))
+        return run_directory
 
     def run_cell(self, cell, logger=print):
         raise NotImplementedError('run_cell() must be defined.')
