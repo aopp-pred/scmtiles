@@ -34,6 +34,26 @@ TileResult = namedtuple('TileResult', ('id', 'cell_results'))
 class TileRunner(object):
 
     def __init__(self, config, tile, tile_in_memory=True):
+        """
+        Construct a tile runner.
+
+        **Arguments:**
+
+        * config: `scmtiles.config.SCMTilesConfig`
+            A configuration object defining the parameters for the tile.
+
+        * tile: `scmtiles.grid_manager.Tile`
+            A tile defining the work required of the runner.
+
+        **Optional argument:**
+
+        * tile_in_memory
+            If `True` then the data for the tile will be loaded from
+            file into memory at initialization time. If `False` then
+            data from the file will be read as needed from the file.
+            Defaults to `True`.
+
+        """
         self.config = config
         self.tile = tile
         self._tile_data = self._load_tile_data(in_memory=tile_in_memory)
@@ -64,7 +84,49 @@ class TileRunner(object):
             raise TileInitializationError(msg.format(input_file_path))
         return tile_ds
 
+    def run(self):
+        """Start the tile's runs in serial."""
+        log_file_name = 'run.{:03d}.{}.log'.format(
+            self.tile.id, self.config.start_time.strftime('%Y%m%d%H%M%S'))
+        log_file_path = pjoin(self.config.work_directory, log_file_name)
+        with open(log_file_path, 'w') as lf:
+            # Write a header to the run log file.
+            header = ('Tile #{d.id:03d}: '
+                      'x=[{d.xselector.start}, {d.xselector.stop}), '
+                      'y=[{d.yselector.start}, {d.yselector.stop})\n')
+            lf.write(header.format(d=self.tile))
+            log = get_logger(lf)
+            tile_result = TileResult(id=self.tile.id, cell_results=[])
+            for cell in self.tile.cells():
+                cell_result = self.run_cell(cell, logger=log)
+                tile_result.cell_results.append(cell_result)
+            log('Finished tile #{:03d}'.format(self.tile.id))
+        return tile_result
+
+    def run_cell(self, cell, logger=print):
+        """
+        Run an individual cell of the tile. This method must be
+        implemented by the derived class.
+
+        """
+        raise NotImplementedError('run_cell() must be defined.')
+
     def get_cell(self, cell):
+        """
+        Retrieve the `xarray.Dataset` corresponding to a given cell
+        belonging to the tile.
+
+        **Arguments:**
+
+        * cell: `scmtiles.grid_manager.Cell`
+            The cell to extract from the tile.
+
+        **Returns:**
+
+        * cell_ds: `xarray.Dataset`
+            The dataset corresponding to the required cell.
+
+        """
         selector = {self.config.xname: cell.x, self.config.yname: cell.y}
         return self._tile_data.isel(**selector)
 
@@ -85,25 +147,3 @@ class TileRunner(object):
             msg = 'Cannot create run directory "{}", permission denied.'
             raise TileRunError(msg.format(run_directory))
         return run_directory
-
-    def run_cell(self, cell, logger=print):
-        raise NotImplementedError('run_cell() must be defined.')
-
-    def run(self):
-        """Start the SCM runs in serial."""
-        log_file_name = 'run.{:03d}.{}.log'.format(
-            self.tile.id, self.config.start_time.strftime('%Y%m%d%H%M%S'))
-        log_file_path = pjoin(self.config.work_directory, log_file_name)
-        with open(log_file_path, 'w') as lf:
-            # Write a header to the run log file.
-            header = ('Tile #{d.id:03d}: '
-                      'x=[{d.xselector.start}, {d.xselector.stop}), '
-                      'y=[{d.yselector.start}, {d.yselector.stop})\n')
-            lf.write(header.format(d=self.tile))
-            log = get_logger(lf)
-            tile_result = TileResult(id=self.tile.id, cell_results=[])
-            for cell in self.tile.cells():
-                cell_result = self.run_cell(cell, logger=log)
-                tile_result.cell_results.append(cell_result)
-            log('Finished tile #{:03d}'.format(self.tile.id))
-        return tile_result
