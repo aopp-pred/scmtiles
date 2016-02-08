@@ -13,43 +13,72 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import namedtuple
+from abc import ABCMeta, abstractmethod
 from itertools import accumulate
 
 
-#: A single cell.
-Cell = namedtuple('Cell', ('x', 'y', 'x_global', 'y_global'))
+class Cell(object):
+    """A single grid cell."""
+
+    def __init__(self, x_global, y_global, x, y=None):
+        #: The x-direction index of the cell in the full grid.
+        self.x_global = x_global
+        #: The y-direction index of the cell in the full grid.
+        self.y_global = y_global
+        #: The x-direction index of the cell within its tile.
+        self.x = x
+        self._y = y
+
+    @property
+    def y(self):
+        """The y-direction index of the cell within its tile."""
+        if self._y is None:
+            raise AtrributeError("Cell has not attribute 'y'.")
+        return self._y
 
 
-class Tile(object):
-    """Representation of a grid tile (sub-domain)."""
+class Tile(metaclass=ABCMeta):
 
-    def __init__(self, tile_id, start_x, end_x, start_y, end_y):
+    def __init__(self, tile_id, tile_type):
+        self.id = tile_id
+        self.type = tile_type
+
+    @abstractmethod
+    def cells(self):
         """
-        Create a `Tile`.
+        Generator of cell information, yielding `Cell` instances for
+        each cell in the tile. Must be defined on subclasses.
+
+        """
+        pass
+
+
+class LinearTile(Tile):
+
+    def __init__(self, tile_id, selector, x_indices, y_indices):
+        """
+        Create a `LinearTile` instance.
 
         **Arguments:**
 
         * tile_id
             Unique identifier for the tile.
 
-        * start_x, end_x
-            The start and end indices of this tile in the x-direction
-            (longitude).
+        * selector
+            A selector that when applied to the linear grid will return
+            the area covered by this tile.
 
-        * start_y, end_y
-            The start and end indices of this tile in the y-direction
-            (latitude).
+        * x_indices
+            The linear grid indices for the x-direction.
+
+        * y_indices
+            The linear grid indices for the y-direction.
 
         """
-        self.id = tile_id
-        #: The tile from the full domain reprented by this sub-domain.
-        self.xselector = slice(start_x, end_x)
-        self.yselector = slice(start_y, end_y)
-        self._xoffset = start_x
-        self._yoffset = start_y
-        self._xsize = end_x - start_x
-        self._ysize = end_y - start_y
+        super().__init__(tile_id, 'linear')
+        self.selector = selector
+        self._xi = x_indices
+        self._yi = y_indices
 
     def cells(self):
         """
@@ -57,56 +86,137 @@ class Tile(object):
         each cell in the tile.
 
         """
-        for y in range(self._ysize):
-            for x in range(self._xsize):
-                yield Cell(x, y, x + self._xoffset, y + self._yoffset)
+        for e, (xi, yi) in enumerate(zip(self._xi, self._yi)):
+            yield Cell(xi, yi, e)
 
     def __str__(self):
-        return 'Tile(xselector={!s}, yselector={!s}'.format(
-            self.xselector, self.yselector)
+        return "ID={} Interval=[{}, {})".format(self.id, self.selector.start,
+                                                self.selector.stop)
 
 
-def decompose_domain(nx, ny, workers):
-    """
-    Decompose a domain into a set of sub-domains, one for each worker.
-    The sub-domains are rows of a grid for simplicity (and in most cases
-    a memory alignment benefit as usually the longitude dimension is the
-    most rapidly varying in netcdf storage).
+class RectangularTile(Tile):
 
-    **Arguments:**
+    def __init__(self, tile_id, xselector, yselector, x_indices, y_indices):
+        """
+        Create a `RectangularTile` instance.
 
-    * nx
-        The grid size in the x-direction (longitude).
-    * ny
-        The grid size in the y-direction (latitude).
-    * workers
-        The number of workers to decompose the grid for.
+        **Arguments:**
 
-    **Returns:**
+        * tile_id
+            Unique identifier for the tile.
 
-    * domains
-        A list of `Tile` objects, one for each worker.
+        * xselector, yselector
+            Selectors that when applied to the grid will return the area
+            covered by this tile.
 
-    """
-    base_rows = ny // workers
-    extra_row_workers = ny % workers
-    rows_per_worker = [base_rows + 1 if i < extra_row_workers else base_rows
-                       for i in range(workers)]
-    # If any of the workers got 0 rows then remove them from the list.
-    rows_per_worker = [r for r in rows_per_worker if r != 0]
-    row_ends = list(accumulate(rows_per_worker))
-    row_starts = [0] + row_ends[:-1]
-    tiles = [Tile(i, 0, nx, s, e)
-             for i, (s, e) in enumerate(zip(row_starts, row_ends))]
-    # If a worker is not allocated a tile then return None instead of a
-    # Tile instance.
-    if len(tiles) < workers:
-        tiles += [None] * (workers - len(tiles))
-    return tiles
+        * x_indices
+            The linear grid indices for the x-direction.
+
+        * y_indices
+            The linear grid indices for the y-direction.
+
+        """
+        super().__init__(tile_id, 'rectangular')
+        self.xselector = xselector
+        self.yselector = yselector
+        self._xi = x_indices
+        self._yi = y_indices
+
+    def cells(self):
+        """
+        Generator of cell information, yielding `Cell` instances for
+        each cell in the tile.
+
+        """
+        for y, yi in enumerate(self._yi):
+            for x, xi in enumerate(self._xi):
+                yield Cell(xi, yi, x, y)
+
+    def __str__(self):
+        return "ID={} X-interval=[{}, {}) Y-interval=[{}, {})".format(
+            self.id, self.xselector.start, self.xselector.stop,
+            self.yselector.start, self.yselector.stop)
 
 
-if __name__ == '__main__':
-    domains = decompose_domain(420, 142, 36)
-    print([x.selector for x in domains])
-    print(list(domains[-3].cells()))
-    print(len(list(domains[-3].cells())))
+class GridManager(object):
+
+    def __init__(self, nx, ny, workers):
+        """
+        Create a `GridManager` for a given grid.
+
+        **Arguments:**
+
+        * nx, ny
+            The dimensions of the grid in the x- and y-directions.
+
+        * workers
+            The number of worker processes that will process the grid.
+
+        """
+        self.nx = nx
+        self.ny = ny
+        self.workers = workers
+
+    def decompose_by_rows(self):
+        """
+        Decompose a grid into a set of tiles, one for each worker. The
+        sub-domains are a number of whole rows of the grid.
+
+        **Returns:**
+
+        * tiles
+            A list of `RectangularTile` objects, one for each worker. If
+            there are more workers than required to tile the domain then
+            this method will return a `None` value instead of a
+            `RectangularTile` instance for workers who don't have a tile
+            to process.
+
+        """
+        base = self.ny // self.workers
+        num_extra = self.ny % self.workers
+        rows_per_worker = [base + 1 if n < num_extra else base
+                           for n in range(self.workers)]
+        rows_per_worker = [r for r in rows_per_worker if r != 0]
+        ends = list(accumulate(rows_per_worker))
+        starts = [0] + ends[:-1]
+        xi = [x for x in range(self.nx)]
+        yi = [y for y in range(self.ny)]
+        tiles = [RectangularTile(n, slice(0, self.nx), slice(start, end),
+                                 xi, yi[slice(start, end)])
+                 for n, (start, end) in enumerate(zip(starts, ends))]
+        if len(tiles) < self.workers:
+            tiles += [None] * (self.workers - len(tiles))
+        return tiles
+
+    def decompose_by_cells(self):
+        """
+        Decompose a grid into a set of tiles, one for each worker. The
+        tiles consist of a number of cells from the grid.
+
+        **Returns:**
+
+        * tiles
+            A list of `LinearTile` objects, one for each worker. If
+            there are more workers than required to tile the domain then
+            this method will return a `None` value instead of a
+            `LinearTile` instance for workers who don't have a tile to
+            process.
+
+        """
+        grid_size = self.nx * self.ny
+        base = grid_size // self.workers
+        num_extra = grid_size % self.workers
+        cells_per_worker = [base + 1 if n < num_extra else base
+                            for n in range(self.workers)]
+        cells_per_worker = [c for c in cells_per_worker if c != 0]
+        ends = list(accumulate(cells_per_worker))
+        starts = [0] + ends[:-1]
+        xi = [x for _ in range(self.ny) for x in range(self.nx)]
+        yi = [y for y in range(self.ny) for _ in range(self.nx)]
+        tiles = [LinearTile(n, slice(start, end),
+                            xi[slice(start, end)],
+                            yi[slice(start, end)])
+                 for n, (start, end) in enumerate(zip(starts, ends))]
+        if len(tiles) < self.workers:
+            tiles += [None] * (self.workers - len(tiles))
+        return tiles

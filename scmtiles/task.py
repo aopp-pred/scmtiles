@@ -23,7 +23,7 @@ from .cli import get_arg_handler
 from .config import SCMTilesConfig
 from .exceptions import (CLIError, CLIHelp, ConfigurationError,
                          TileInitializationError)
-from .grid_manager import decompose_domain
+from .grid_manager import GridManager
 
 
 class TileTask(object):
@@ -32,7 +32,7 @@ class TileTask(object):
     #: Rank of the master task, always 0.
     MASTER = 0
 
-    def __init__(self, runner_class):
+    def __init__(self, runner_class, decompose_mode='rows'):
         """Create an SCM Tiles task."""
         # Define an MPI communicator.
         self.comm = MPI.COMM_WORLD
@@ -44,6 +44,7 @@ class TileTask(object):
         self.config = None
         # The class used to construct tile runners.
         self.runner_class = runner_class
+        self.decompose_mode = decompose_mode
 
     def initialize(self):
         """
@@ -87,8 +88,11 @@ class TileTask(object):
                 # Broadcast a no error message to all processes.
                 self.comm.bcast((False, None), root=TileTask.MASTER)
             num_processes = self.comm.Get_size()
-            tiles = decompose_domain(config.gridx, config.gridy,
-                                     num_processes)
+            gm = GridManager(config.gridx, config.gridy, num_processes)
+            if self.decompose_mode == 'cells':
+                tiles = gm.decompose_by_cells()
+            else:
+                tiles = gm.decompose_by_rows()
             print('- domain tiled for {} processes'.format(num_processes),
                   flush=True)
         else:

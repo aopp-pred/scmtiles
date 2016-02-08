@@ -59,8 +59,6 @@ class TileRunner(object):
         self._tile_data = self._load_tile_data(in_memory=tile_in_memory)
 
     def _load_tile_data(self, in_memory=True):
-        selector = {self.config.xname: self.tile.xselector,
-                    self.config.yname: self.tile.yselector}
         # Add new configuration items forcing_step_seconds and
         # forcing_num_steps which can be used to gather the correct input times
         forcing_length = self.config.forcing_num_steps * \
@@ -74,11 +72,21 @@ class TileRunner(object):
                             for t in forcing_times]
         input_file_paths = [pjoin(self.config.input_directory, f)
                             for f in input_file_names]
+        # Define the tile selector.
+        if self.tile.type == 'linear':
+            selector = {'grid': self.tile.selector}
+        else:
+            selector = {self.config.xname: self.tile.xselector,
+                        self.config.yname: self.tile.yselector}
         try:
             with xr.open_mfdataset(input_file_paths) as ds:
+                if self.tile.type == 'linear':
+                    # Reconfigure the grid for linear tiles.
+                    ds = ds.stack(grid=(self.config.yname, self.config.xname))
                 tile_ds = ds.isel(**selector)
                 if in_memory:
                     tile_ds.load()
+                tile_ds['time'].encoding = {'units': 'seconds'}
         except RuntimeError:
             msg = 'Failed to open input file "{}".'
             raise TileInitializationError(msg.format(input_file_path))
@@ -91,10 +99,8 @@ class TileRunner(object):
         log_file_path = pjoin(self.config.work_directory, log_file_name)
         with open(log_file_path, 'w') as lf:
             # Write a header to the run log file.
-            header = ('Tile #{d.id:03d}: '
-                      'x=[{d.xselector.start}, {d.xselector.stop}), '
-                      'y=[{d.yselector.start}, {d.yselector.stop})\n')
-            lf.write(header.format(d=self.tile))
+            header = 'Tile: {!s}`n'.format(self.tile)
+            lf.write(header)
             log = get_logger(lf)
             tile_result = TileResult(id=self.tile.id, cell_results=[])
             for cell in self.tile.cells():
@@ -127,7 +133,10 @@ class TileRunner(object):
             The dataset corresponding to the required cell.
 
         """
-        selector = {self.config.xname: cell.x, self.config.yname: cell.y}
+        if self.tile.type == 'linear':
+            selector = {'grid': cell.x}
+        else:
+            selector = {self.config.xname: cell.x, self.config.yname: cell.y}
         return self._tile_data.isel(**selector)
 
     def create_run_directory(self):
