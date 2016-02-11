@@ -1,4 +1,4 @@
-"""SCM Tiles - run the ECMWF SCM over spatial tiles."""
+"""SCM Tiles - run a single-column model over a spatial area."""
 # Copyright 2016 Andrew Dawson
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

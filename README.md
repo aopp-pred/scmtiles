@@ -1,3 +1,3 @@
 # SCM Tiles
 
-Software for running the ECMWF OpenIFS SCM over a grid.
+Software for running a single-column model over a grid.

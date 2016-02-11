@@ -17,6 +17,24 @@ import time
 
 
 def get_logger(log_file):
+    """
+    Return a logging function that logs to a particular file or
+    file-like object.
+
+    **Argument:**
+
+    * log_file
+        A file or file-like object to define the logger on.
+
+    **Returns:**
+
+    * logger
+        A callable accepting a single input, which consists of a message
+        (anything that can be converted to a string) which will be
+        logged to the file defined by `log_file` with the date and time
+        prepended to the message.
+
+    """
     def _log(message):
         line = '[{}] {!s}\n'.format(time.strftime('%F %T'), message)
         log_file.write(line)

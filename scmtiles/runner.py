@@ -111,8 +111,24 @@ class TileRunner(object):
 
     def run_cell(self, cell, logger=print):
         """
-        Run an individual cell of the tile. This method must be
-        implemented by the derived class.
+        Run an individual cell of the tile.
+
+        **Argument:**
+
+        * cell
+            A `Cell` instance des cribing the cell to be run.
+
+        **Keyword argument:**
+
+        * logger
+            A callable logging function. Defaults to `print`.
+
+        **Returns:**
+
+        * cell_result
+            A `CellResult` object describing the result of the run.
+
+        .. note:: This method must be implemented by the derived class.
 
         """
         raise NotImplementedError('run_cell() must be defined.')
