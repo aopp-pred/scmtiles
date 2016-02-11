@@ -15,7 +15,7 @@
 
 import os
 from collections import namedtuple
-from configparser import (ConfigParser, ExtendedInterpolation,
+from configparser import (ConfigParser, MissingSectionHeaderError,
                           NoSectionError, NoOptionError)
 from dateutil.parser import parse as parse_date
 
@@ -96,7 +96,12 @@ class SCMTilesConfig(object):
 
         """
         config = ConfigParser()
-        files_loaded = config.read(config_file_path)
+        try:
+            files_loaded = config.read(config_file_path)
+        except MissingSectionHeaderError:
+            msg = ('The configuration file "{}" is not valid, it must '
+                   'contain a section header.')
+            raise ConfigurationError(msg.format(config_file_path))
         if not files_loaded:
             msg = ('The configuration file "{}" does not exist '
                    'or is not readable.')
