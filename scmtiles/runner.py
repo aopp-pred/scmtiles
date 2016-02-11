@@ -137,7 +137,15 @@ class TileRunner(object):
             selector = {'grid': cell.x}
         else:
             selector = {self.config.xname: cell.x, self.config.yname: cell.y}
-        return self._tile_data.isel(**selector)
+        cell_ds = self._tile_data.isel(**selector)
+        if self.tile.type == 'linear':
+            # Convert the grid coordinate back to latitude and longitude.
+            # NB: cell_ds.unstack('grid') does not appear to work.
+            lat, lon = cell_ds['grid'].data
+            cell_ds.coords.update({self.config.yname: lat,
+                                   self.config.xname: lon})
+            cell_ds = cell_ds.drop('grid')
+        return cell_ds
 
     def create_run_directory(self):
         """
