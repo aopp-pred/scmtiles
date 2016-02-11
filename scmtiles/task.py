@@ -127,7 +127,13 @@ class TileTask(object):
             run_info = None
         else:
             if self.tile is not None:
-                run_info = runner.run()
+                try:
+                    run_info = runner.run()
+                except TileRunError as e:
+                    msg = 'ERROR: tile #{:03d} failed to run: {!s}'
+                    print(msg.format(self.tile.id, e), file=sys.stderr,
+                          flush=True)
+                    run_info = None
             else:
                 run_info = None
         # Use an MPI gather call to wait for each process to finish.

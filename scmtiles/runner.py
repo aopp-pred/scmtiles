@@ -98,6 +98,12 @@ class TileRunner(metaclass=ABCMeta):
         log_file_name = 'run.{:03d}.{}.log'.format(
             self.tile.id, self.config.start_time.strftime('%Y%m%d%H%M%S'))
         log_file_path = pjoin(self.config.work_directory, log_file_name)
+        # Create the work directory if it doesn't exist.
+        try:
+            os.makedirs(self.config.work_directory)
+        except PermissionError as e:
+            msg = 'Cannot create work directory "{}", permission denied.'
+            raise TileRunError(msg.format(run_directory))
         with open(log_file_path, 'w') as lf:
             # Write a header to the run log file.
             header = 'Tile: {!s}`n'.format(self.tile)
