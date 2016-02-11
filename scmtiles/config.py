@@ -112,7 +112,7 @@ class SCMTilesConfig(object):
                 try:
                     config_args[option] = ctype(config.get(section, option))
                 except NoSectionError:
-                    msg = 'Missing section "[{}]" in configuration file "{}"'
+                    msg = 'Missing section "[{}]" in configuration file "{}".'
                     raise ConfigurationError(msg.format(section,
                                                         config_file_path))
                 except NoOptionError:
@@ -123,7 +123,7 @@ class SCMTilesConfig(object):
                                                         config_file_path))
                 except ValueError:
                     msg = ('Cannot convert option "{}" to the required '
-                           'type "{!r}"')
+                           'type "{!r}".')
                     raise ConfigurationError(msg.format(option, ctype))
         return SCMTilesConfig(**config_args, strict=strict)
 

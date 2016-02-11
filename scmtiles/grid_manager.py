@@ -33,7 +33,7 @@ class Cell(object):
     def y(self):
         """The y-direction index of the cell within its tile."""
         if self._y is None:
-            raise AtrributeError("Cell has not attribute 'y'.")
+            raise AttributeError("Cell has no attribute 'y'.")
         return self._y
 
     def __repr__(self):
