@@ -36,6 +36,14 @@ class Cell(object):
             raise AtrributeError("Cell has not attribute 'y'.")
         return self._y
 
+    def __repr__(self):
+        if self._y is None:
+            r = 'Cell(x_global={c.x_global}, y_global={c.y_global}, x={c.x})'
+        else:
+            r = ('Cell(x_global={c.x_global}, y_global={c.y_global} '
+                 'x={c.x}, y={c.y})')
+        return r.format(c=self)
+
 
 class Tile(metaclass=ABCMeta):
 
