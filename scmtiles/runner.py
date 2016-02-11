@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from datetime import timedelta
 from os.path import join as pjoin
@@ -31,7 +32,7 @@ CellResult = namedtuple('CellResult', ('cell', 'outputs'))
 TileResult = namedtuple('TileResult', ('id', 'cell_results'))
 
 
-class TileRunner(object):
+class TileRunner(metaclass=ABCMeta):
 
     def __init__(self, config, tile, tile_in_memory=True):
         """
@@ -109,6 +110,7 @@ class TileRunner(object):
             log('Finished tile #{:03d}'.format(self.tile.id))
         return tile_result
 
+    @abstractmethod
     def run_cell(self, cell, logger=print):
         """
         Run an individual cell of the tile.
