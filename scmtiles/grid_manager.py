@@ -118,10 +118,10 @@ class RectangularTile(Tile):
             covered by this tile.
 
         * x_indices
-            The linear grid indices for the x-direction.
+            The grid indices for the x-direction.
 
         * y_indices
-            The linear grid indices for the y-direction.
+            The grid indices for the y-direction.
 
         """
         super().__init__(tile_id, 'rectangular')
