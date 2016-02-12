@@ -189,8 +189,8 @@ class TileRunner(metaclass=ABCMeta):
             run_directory = mkdtemp(dir=self.config.work_directory,
                                     prefix='run.')
         except PermissionError:
-            msg = 'Cannot create run directory "{}", permission denied.'
-            raise TileRunError(msg.format(run_directory))
+            msg = 'Cannot create run directory in "{}", permission denied.'
+            raise TileRunError(msg.format(self.config.work_directory))
         return run_directory
 
     def link_template(self, run_directory):
