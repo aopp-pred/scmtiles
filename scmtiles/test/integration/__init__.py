@@ -1,4 +1,4 @@
-"""Tests for the SCM Tiles software."""
+"""Integration tests for the SCM Tiles software."""
 # Copyright 2016 Andrew Dawson
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,10 +12,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-import os
-
-
-def _get_test_data_path(filename):
-    path = os.path.join(os.path.dirname(__file__), 'data', filename)
-    return os.path.abspath(path)
