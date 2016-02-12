@@ -13,22 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import contextlib
+from contextlib import redirect_stderr
 from io import StringIO
 import sys
 import unittest
 
 from scmtiles.cli import get_arg_handler
 from scmtiles.exceptions import CLIError, CLIHelp
-
-
-@contextlib.contextmanager
-def stderr_catcher():
-    """Context manager to catch stderr and ignore it."""
-    old_stderr = sys.stderr
-    sys.stderr = StringIO()
-    yield
-    sys.stderr = old_stderr
 
 
 class Test(unittest.TestCase):
@@ -51,7 +42,7 @@ class Test(unittest.TestCase):
         error_message = ('the following arguments are required: '
                          'config_file_path')
         with self.assertRaisesRegex(CLIError, error_message):
-            with stderr_catcher():
+            with redirect_stderr(StringIO()):
                 argns = parser.parse_args(args)
 
     def test_too_many_args(self):
@@ -59,6 +50,6 @@ class Test(unittest.TestCase):
         args = ['one', 'two']
         error_message = 'unrecognized arguments: two'
         with self.assertRaisesRegex(CLIError, error_message):
-            with stderr_catcher():
+            with redirect_stderr(StringIO()):
                 argns = parser.parse_args(args)
                 print(argns)
