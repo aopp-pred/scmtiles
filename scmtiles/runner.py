@@ -89,7 +89,6 @@ class TileRunner(metaclass=ABCMeta):
                 tile_ds = ds.isel(**selector)
                 if in_memory:
                     tile_ds.load()
-                tile_ds['time'].encoding = {'units': 'seconds'}
         except RuntimeError:
             msg = 'Failed to open input file "{}".'
             raise TileInitializationError(msg.format(input_file_path))
