@@ -16,6 +16,7 @@
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from datetime import timedelta
+import os
 from os.path import join as pjoin
 from tempfile import mkdtemp
 
@@ -100,7 +101,7 @@ class TileRunner(metaclass=ABCMeta):
         log_file_path = pjoin(self.config.work_directory, log_file_name)
         # Create the work directory if it doesn't exist.
         try:
-            os.makedirs(self.config.work_directory)
+            os.makedirs(self.config.work_directory, exist_ok=True)
         except PermissionError as e:
             msg = 'Cannot create work directory "{}", permission denied.'
             raise TileRunError(msg.format(run_directory))
