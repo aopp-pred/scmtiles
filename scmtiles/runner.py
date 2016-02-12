@@ -102,8 +102,12 @@ class TileRunner(metaclass=ABCMeta):
         log_file_name = 'run.{:03d}.{}.log'.format(
             self.tile.id, self.config.start_time.strftime('%Y%m%d%H%M%S'))
         log_file_path = pjoin(self.config.work_directory, log_file_name)
-        # Create the work directory if it doesn't exist.
         try:
+            # Create the work directory if it doesn't exist. Doing this in
+            # the TileRunner allows the work directory to be local on each
+            # worker. However, we must account for the directory already
+            # existing as it will if multiple workers share the same host or
+            # if the destination is a shared mount.
             os.makedirs(self.config.work_directory, exist_ok=True)
         except PermissionError as e:
             msg = 'Cannot create work directory "{}", permission denied.'
