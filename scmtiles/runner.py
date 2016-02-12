@@ -92,6 +92,9 @@ class TileRunner(metaclass=ABCMeta):
         except RuntimeError:
             msg = 'Failed to open input files "{}".'
             raise TileInitializationError(msg.format(input_file_paths))
+        except ValueError:
+            msg = 'Failed to select input tile, check grid dimension names'
+            raise TileInitializationError(msg)
         return tile_ds
 
     def run(self):
