@@ -1,4 +1,4 @@
-"""Tests for the `scmtiles.util`."""
+"""Tests for `scmtiles.util`."""
 # Copyright 2016 Andrew Dawson
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
