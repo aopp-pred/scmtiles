@@ -90,8 +90,8 @@ class TileRunner(metaclass=ABCMeta):
                 if in_memory:
                     tile_ds.load()
         except RuntimeError:
-            msg = 'Failed to open input file "{}".'
-            raise TileInitializationError(msg.format(input_file_path))
+            msg = 'Failed to open input files "{}".'
+            raise TileInitializationError(msg.format(input_file_paths))
         return tile_ds
 
     def run(self):
