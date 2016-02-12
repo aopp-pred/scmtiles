@@ -16,13 +16,14 @@
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from datetime import timedelta
+import glob
 import os
 from os.path import join as pjoin
 from tempfile import mkdtemp
 
 import xray as xr
 
-from .exceptions import TileInitializationError
+from .exceptions import TileInitializationError, TileRunError
 from .util import get_logger
 
 
@@ -189,3 +190,32 @@ class TileRunner(metaclass=ABCMeta):
             msg = 'Cannot create run directory "{}", permission denied.'
             raise TileRunError(msg.format(run_directory))
         return run_directory
+
+    def link_template(self, run_directory):
+        """
+        Link all filesin the template directory to the run directory.
+
+        **Argument:**
+
+        * run_directory
+            Path to the run directory in which links will be created.
+
+        **Returns:**
+
+        * linked_files
+            A list of 2-tuples containing the full paths to the source
+            and target of each linked file.
+
+        """
+        linked_files = []
+        template_pattern = '{}/*'.format(self.config.template_directory)
+        for source in glob.glob(template_pattern):
+            target = pjoin(run_directory, os.path.basename(source))
+            try:
+                os.symlink(source, target)
+            except PermissionError:
+                msg = 'Cannot create links in "{}", permission denied.'
+                raise TileRunError(msg.format(run_directory))
+            else:
+                linked_files.append((source, target))
+        return linked_files
