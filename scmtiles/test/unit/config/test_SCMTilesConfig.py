@@ -43,7 +43,7 @@ class Test_from_file(unittest.TestCase):
         config_pairs = ["{!s} = {!s}".format(key, value)
                         for (key, value) in config_dict.items()]
         config_text = "{!s}\n{!s}".format(section_name,
-                                            "\n".join(config_pairs))
+                                          "\n".join(config_pairs))
         return config_text
 
     def _check_exception(self, config_text, exception_class, error_message):
