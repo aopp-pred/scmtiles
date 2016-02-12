@@ -46,7 +46,7 @@ class TileTask(object):
         self.runner_class = runner_class
         self.decompose_mode = decompose_mode
 
-    def initialize(self):
+    def initialize(self, cliargs=None):
         """
         Initialize the task, setting the domain and configuration.
 
@@ -57,7 +57,9 @@ class TileTask(object):
             # for each worker.
             try:
                 print('Initializing tiles...', flush=True)
-                args = get_arg_handler().parse_args(sys.argv[1:])
+                if cliargs is None:
+                    cliargs = sys.argv
+                args = get_arg_handler().parse_args(cliargs[1:])
                 config = SCMTilesConfig.from_file(args.config_file_path)
                 print('- configuration loaded', flush=True)
                 if not os.path.exists(config.output_directory):
