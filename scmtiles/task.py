@@ -22,7 +22,7 @@ from mpi4py import MPI
 from .cli import get_arg_handler
 from .config import SCMTilesConfig
 from .exceptions import (CLIError, CLIHelp, ConfigurationError,
-                         TileInitializationError)
+                         TileInitializationError, TileRunError)
 from .grid_manager import GridManager
 
 
