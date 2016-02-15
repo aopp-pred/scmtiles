@@ -87,7 +87,7 @@ input_directory = {input_directory:s}
 template_directory = {template_directory:s}
 work_directory = {work_directory:s}
 output_directory = {output_directory:s}
-input_file_pattern = grid.{{start_time.year:04d}}{{start_time.month:02d}}.nc
+input_file_pattern = grid.{{time.year:04d}}{{time.month:02d}}.nc
 """
 
 
