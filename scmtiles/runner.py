@@ -101,17 +101,7 @@ class TileRunner(metaclass=ABCMeta):
         """Start the tile's runs in serial."""
         log_file_name = 'run.{:03d}.{}.log'.format(
             self.tile.id, self.config.start_time.strftime('%Y%m%d%H%M%S'))
-        log_file_path = pjoin(self.config.work_directory, log_file_name)
-        try:
-            # Create the work directory if it doesn't exist. Doing this in
-            # the TileRunner allows the work directory to be local on each
-            # worker. However, we must account for the directory already
-            # existing as it will if multiple workers share the same host or
-            # if the destination is a shared mount.
-            os.makedirs(self.config.work_directory, exist_ok=True)
-        except PermissionError as e:
-            msg = 'Cannot create work directory "{}", permission denied.'
-            raise TileRunError(msg.format(run_directory))
+        log_file_path = pjoin(self.config.output_directory, log_file_name)
         with open(log_file_path, 'w') as lf:
             # Write a header to the run log file.
             header = 'Tile: {!s}`n'.format(self.tile)
