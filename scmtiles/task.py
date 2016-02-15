@@ -37,7 +37,7 @@ class TileTask(object):
         # Define an MPI communicator.
         self.comm = MPI.COMM_WORLD
         # Determine if this task is the master task.
-        self.rank = self.comm.Get_rank()
+        self.rank = self.comm.rank
         self.is_master = self.rank == 0
         # Set default null values for domain and config instance variables.
         self.tile = None
@@ -89,7 +89,7 @@ class TileTask(object):
             else:
                 # Broadcast a no error message to all processes.
                 self.comm.bcast((False, None), root=TileTask.MASTER)
-            num_processes = self.comm.Get_size()
+            num_processes = self.comm.size
             gm = GridManager(config.xsize, config.ysize, num_processes)
             if self.decompose_mode == 'cells':
                 tiles = gm.decompose_by_cells()
