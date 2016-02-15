@@ -35,8 +35,8 @@ class SCMTilesConfig(object):
                                     ('forcing_num_steps', int),
                                     ('xname', str),
                                     ('yname', str),
-                                    ('gridx', int),
-                                    ('gridy', int),
+                                    ('xsize', int),
+                                    ('ysize', int),
                                     ('input_directory', _to_path),
                                     ('output_directory', _to_path),
                                     ('work_directory', _to_path),
@@ -44,7 +44,7 @@ class SCMTilesConfig(object):
                                     ('input_file_pattern', str))}
 
     def __init__(self, start_time, forcing_step_seconds, forcing_num_steps,
-                 xname, yname, gridx, gridy, input_directory, output_directory,
+                 xname, yname, xsize, ysize, input_directory, output_directory,
                  work_directory, template_directory, input_file_pattern,
                  strict=True):
         """
@@ -61,11 +61,11 @@ class SCMTilesConfig(object):
         self.xname = xname
         self.yname = yname
         # Grid must have positive sizes in x and y directions.
-        if strict and (gridx <= 0 or gridy <= 0):
-            msg = 'Grid sizes must be >= 1, got gridx={} and gridy={}.'
-            raise ConfigurationError(msg.format(gridx, gridy))
-        self.gridx = gridx
-        self.gridy = gridy
+        if strict and (xsize <= 0 or ysize <= 0):
+            msg = 'Grid sizes must be >= 1, got xsize={} and ysize={}.'
+            raise ConfigurationError(msg.format(xsize, ysize))
+        self.xsize = xsize
+        self.ysize = ysize
         # The input and template directories are required to exist, the output
         # and work directories may be able to be created when required.
         if strict and not os.path.exists(input_directory):

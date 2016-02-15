@@ -80,8 +80,8 @@ forcing_num_steps = 0
 
 xname = lon
 yname = lat
-gridx = 28
-gridy = 6
+xsize = 28
+ysize = 6
 
 input_directory = {input_directory:s}
 template_directory = {template_directory:s}

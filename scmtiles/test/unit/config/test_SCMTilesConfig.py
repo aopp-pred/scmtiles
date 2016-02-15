@@ -31,8 +31,8 @@ class Test_from_file(unittest.TestCase):
             forcing_num_steps=3,
             xname='lon',
             yname='lat',
-            gridx=480,
-            gridy=142,
+            xsize=480,
+            ysize=142,
             input_directory='/tmp',
             output_directory='/tmp',
             work_directory='/tmp',
@@ -106,18 +106,18 @@ class Test_from_file(unittest.TestCase):
 
     def test_from_file_bad_grid_size_non_integer(self):
         config_dict = self.config_dict
-        config_dict['gridx'] = 'seven'
+        config_dict['xsize'] = 'seven'
         config_text = self._config_from_dict(config_dict)
-        error_message = ('Cannot convert option "gridx" to the required '
+        error_message = ('Cannot convert option "xsize" to the required '
                          'type ".*".')
         self._check_exception(config_text, ConfigurationError, error_message)
 
     def test_from_file_bad_grid_size_invalid(self):
         config_dict = self.config_dict
-        config_dict['gridx'] = 0
+        config_dict['xsize'] = 0
         config_text = self._config_from_dict(config_dict)
-        error_message = ('Grid sizes must be >= 1, got gridx={} and gridy={}.'
-                         ''.format(config_dict['gridx'], config_dict['gridy']))
+        error_message = ('Grid sizes must be >= 1, got xsize={} and ysize={}.'
+                         ''.format(config_dict['xsize'], config_dict['ysize']))
         self._check_exception(config_text, ConfigurationError, error_message)
 
     def test_input_directory_does_not_exist(self):
@@ -138,7 +138,7 @@ class Test_from_file(unittest.TestCase):
 
     def test_from_file_non_strict(self):
         config_dict = self.config_dict
-        config_dict['gridx'] = 0
+        config_dict['xsize'] = 0
         config_dict['input_directory'] = '/scmtiles_input'
         config_dict['template_directory'] = '/scmtiles_template'
         config_text = self._config_from_dict(config_dict)
@@ -147,5 +147,5 @@ class Test_from_file(unittest.TestCase):
             with open(config_file_path, 'w') as cf:
                 cf.write(config_text)
             config = SCMTilesConfig.from_file(config_file_path, strict=False)
-            for key in ('gridx', 'input_directory', 'template_directory'):
+            for key in ('xsize', 'input_directory', 'template_directory'):
                 self.assertEqual(getattr(config, key), config_dict[key])

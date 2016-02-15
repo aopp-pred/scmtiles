@@ -90,7 +90,7 @@ class TileTask(object):
                 # Broadcast a no error message to all processes.
                 self.comm.bcast((False, None), root=TileTask.MASTER)
             num_processes = self.comm.Get_size()
-            gm = GridManager(config.gridx, config.gridy, num_processes)
+            gm = GridManager(config.xsize, config.ysize, num_processes)
             if self.decompose_mode == 'cells':
                 tiles = gm.decompose_by_cells()
             else:
