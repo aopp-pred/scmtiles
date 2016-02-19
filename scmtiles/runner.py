@@ -89,9 +89,9 @@ class TileRunner(metaclass=ABCMeta):
                 tile_ds = ds.isel(**selector)
                 if in_memory:
                     tile_ds.load()
-        except RuntimeError:
-            msg = 'Failed to open input files "{}".'
-            raise TileInitializationError(msg.format(input_file_paths))
+        except RuntimeError as e:
+            msg = 'Failed to open input files "{}": {!s}'
+            raise TileInitializationError(msg.format(input_file_paths, e))
         except ValueError:
             msg = 'Failed to select input tile, check grid dimension names'
             raise TileInitializationError(msg)
