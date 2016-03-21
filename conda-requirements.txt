@@ -1,0 +1,22 @@
+# Use this file to create a conda environment with required dependencies
+# installed, using the command:
+#
+#     conda create -n <name> --file conda-requirements.txt
+#
+
+# Python dependency:
+python>=3.5
+
+# Build dependencies:
+setuptools
+
+# Runtime dependencies:
+mpi4py
+python-dateutil
+xarray
+netcdf4
+dask
+
+# Testing dependencies:
+nose
+pep8
