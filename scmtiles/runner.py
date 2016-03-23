@@ -93,8 +93,13 @@ class TileRunner(metaclass=ABCMeta):
         except RuntimeError as e:
             msg = 'Failed to open input files "{}": {!s}'
             raise TileInitializationError(msg.format(input_file_paths, e))
-        except ValueError:
-            msg = 'Failed to select input tile, check grid dimension names'
+        except ValueError as e:
+            if 'concat_dim' in str(e):
+                msg = ("Failed to load input tiles, couldn't concatenate"
+                       "over time dimension, is it single-valued?")
+            else:
+                msg = ("Failed to select input tile, check grid dimensions "
+                       "in configuration match those in the files")
             raise TileInitializationError(msg)
         return tile_ds
 
