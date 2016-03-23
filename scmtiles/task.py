@@ -32,7 +32,8 @@ class TileTask(object):
     #: Rank of the master task, always 0.
     MASTER = 0
 
-    def __init__(self, runner_class, decompose_mode='rows'):
+    def __init__(self, runner_class, runner_kwargs=None,
+                 decompose_mode='rows'):
         """Create an SCM Tiles task."""
         # Define an MPI communicator.
         self.comm = MPI.COMM_WORLD
@@ -44,6 +45,7 @@ class TileTask(object):
         self.config = None
         # The class used to construct tile runners.
         self.runner_class = runner_class
+        self.runner_kwargs = runner_kwargs or {}
         self.decompose_mode = decompose_mode
 
     def initialize(self, cliargs=None):
@@ -122,7 +124,8 @@ class TileTask(object):
             print('Running tiles...', flush=True)
         try:
             if self.tile is not None:
-                runner = self.runner_class(self.config, self.tile)
+                runner = self.runner_class(self.config, self.tile,
+                                           **self.runner_kwargs)
         except TileInitializationError as e:
             msg = 'ERROR: tile #{:03d} failed to initialize: {!s}'
             print(msg.format(self.tile.id, e), file=sys.stderr, flush=True)
