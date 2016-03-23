@@ -75,20 +75,21 @@ class TileRunner(metaclass=ABCMeta):
                             for t in forcing_times]
         input_file_paths = [pjoin(self.config.input_directory, f)
                             for f in input_file_names]
-        # Define the tile selector.
-        if self.tile.type == 'linear':
-            selector = {'grid': self.tile.selector}
-        else:
-            selector = {self.config.xname: self.tile.xselector,
-                        self.config.yname: self.tile.yselector}
         try:
-            with xr.open_mfdataset(input_file_paths) as ds:
-                if self.tile.type == 'linear':
-                    # Reconfigure the grid for linear tiles.
-                    ds = ds.stack(grid=(self.config.yname, self.config.xname))
-                tile_ds = ds.isel(**selector)
-                if in_memory:
-                    tile_ds.load()
+            ds = xr.open_mfdataset(input_file_paths)
+            if self.tile.type == 'linear':
+                # Reconfigure the grid for linear tiles.
+                chunks = {'grid': len(ds[self.config.xname])}
+                ds = ds.stack(grid=(self.config.yname, self.config.xname))
+                selector = {'grid': self.tile.selector}
+            else:
+                chunks = {self.config.yname: (self.tile.yselector.stop -
+                                              self.tile.yselector.start)}
+                selector = {self.config.xname: self.tile.xselector,
+                            self.config.yname: self.tile.yselector}
+            tile_ds = ds.chunk(chunks).isel(**selector)
+            if in_memory:
+                tile_ds.load()
         except RuntimeError as e:
             msg = 'Failed to open input files "{}": {!s}'
             raise TileInitializationError(msg.format(input_file_paths, e))
