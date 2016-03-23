@@ -373,10 +373,10 @@ def create_support_scripts(base_path, miniconda_path, env_name,
 
     """
     update_scmtiles_path = os.path.join(base_path, 'update_scmtiles.sh')
-    interact_path = os.path.join(base_path, 'interact.sh')
+    scmenv_path = os.path.join(base_path, 'scmenv.sh')
     create_support_script(_UPDATE_SCMTILES_TEMPLATE, update_scmtiles_path,
                           base_path, miniconda_path, env_name, scmtiles_path)
-    create_support_script(_INTERACT_TEMPLATE, interact_path,
+    create_support_script(_SCMENV_TEMPLATE, scmenv_path,
                           base_path, miniconda_path, env_name, scmtiles_path)
 
 
@@ -492,8 +492,8 @@ main $@
 exit $?
 """
 
-#: Template for interact.sh support script.
-_INTERACT_TEMPLATE = """#!/bin/bash
+#: Template for scmenv.sh support script.
+_SCMENV_TEMPLATE = """#!/bin/bash
 #
 # Interact with the scmtiles Python environment.
 #
@@ -523,7 +523,7 @@ main () {{
         error "cannot activate the scmtiles conda environment"
         exit 1
     fi
-    PS1="scmtiles-interactive> " bash --norc --noprofile
+    PS1="scmtiles-env> " bash --norc --noprofile
     return 0
 }}
 
