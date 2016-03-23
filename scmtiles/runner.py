@@ -110,7 +110,7 @@ class TileRunner(metaclass=ABCMeta):
         log_file_path = pjoin(self.config.output_directory, log_file_name)
         with open(log_file_path, 'w') as lf:
             # Write a header to the run log file.
-            header = 'Tile: {!s}`n'.format(self.tile)
+            header = 'Tile: {!s}\n'.format(self.tile)
             lf.write(header)
             log = get_logger(lf)
             tile_result = TileResult(id=self.tile.id, cell_results=[])
