@@ -15,7 +15,7 @@ mpi4py
 python-dateutil
 xarray
 netcdf4
-dask
+dask>=0.8.1
 
 # Testing dependencies:
 nose
