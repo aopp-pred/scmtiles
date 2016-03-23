@@ -59,7 +59,7 @@ class TileRunner(metaclass=ABCMeta):
         """
         self.config = config
         self.tile = tile
-        self._tile_data = self._load_tile_data(in_memory=tile_in_memory)
+        self.tile_ds = self._load_tile_data(in_memory=tile_in_memory)
 
     def _load_tile_data(self, in_memory=True):
         # Add new configuration items forcing_step_seconds and
@@ -165,7 +165,7 @@ class TileRunner(metaclass=ABCMeta):
             selector = {'grid': cell.x}
         else:
             selector = {self.config.xname: cell.x, self.config.yname: cell.y}
-        cell_ds = self._tile_data.isel(**selector)
+        cell_ds = self.tile_ds.isel(**selector)
         if self.tile.type == 'linear':
             # Convert the grid coordinate back to latitude and longitude.
             # NB: cell_ds.unstack('grid') does not appear to work.
