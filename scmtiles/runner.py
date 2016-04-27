@@ -66,7 +66,7 @@ class TileRunner(metaclass=ABCMeta):
         # forcing_num_steps which can be used to gather the correct input times
         forcing_length = self.config.forcing_num_steps * \
             self.config.forcing_step_seconds
-        forcing_leads = range(0, forcing_length + 1,
+        forcing_leads = range(0, forcing_length,
                               self.config.forcing_step_seconds)
         forcing_times = [self.config.start_time + timedelta(seconds=n)
                          for n in forcing_leads]
