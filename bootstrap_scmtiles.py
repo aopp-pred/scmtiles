@@ -217,6 +217,17 @@ def clone_repository(repo_url, target):
     return target
 
 
+def checkout_revision(repo_dir, revision_id):
+    checkout_command = ['git', 'checkout', revision_id]
+    try:
+        check_call(checkout_command, cwd=repo_dir)
+    except CalledProcessError:
+        msg = ('Failed to checkout revision "{:s}", check that the '
+               'commit/branch/tag exists')
+        raise Error(msg.format(revision_id))
+    return revision_id
+
+
 def clone_scmtiles(scmtiles_dir):
     """
     Clone the scmtiles git repository to a specified location.
@@ -393,6 +404,10 @@ def main(argv=None):
         '-e', '--env-name', type=str,
         help='name for the environment within Miniconda, useful with -m')
     ap.add_argument(
+        '-r', '--revision', type=str,
+        help=('a git revision (commit/branch/tag) to checkout from '
+              'the scmtiles repository'))
+    ap.add_argument(
         'base_directory', metavar='base_dir', type=str,
         help='base directory for the scmtiles project')
     argns = ap.parse_args(argv[1:])
@@ -426,6 +441,8 @@ def main(argv=None):
             miniconda_path = argns.miniconda_path
         # Install scmtiles:
         clone_scmtiles(scmtiles_path)
+        if argns.revision is not None:
+            checkout_revision(scmtiles_path, argns.revision)
         env_name = argns.env_name or 'scmtiles'
         env_path = create_environment(miniconda_path, scmtiles_path, env_name)
         install_scmtiles(env_path, scmtiles_path)
@@ -477,7 +494,7 @@ main () {{
     # Fetch the latest changes:
     git pull
     if [[ $? -ne 0 ]]; then
-        error "cannot update source from git, check connection"
+        error "cannot update source, check repository status and connection"
         return 3
     fi
     # Install the updated scmtiles version:
