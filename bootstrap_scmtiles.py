@@ -15,12 +15,29 @@
 # limitations under the License.
 from __future__ import absolute_import, division, print_function
 
-from argparse import ArgumentParser
+from optparse import OptionParser
 import os
 import stat
-from subprocess import check_call, check_output, CalledProcessError
+from subprocess import check_call, CalledProcessError
+try:
+    from subprocess import check_output
+except ImportError:
+    from subprocess import Popen, PIPE
+
+    def check_output(cmd):
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        (stdout, stderr) = p.communicate()
+        if p.returncode != 0:
+            raise CalledProcessError('failed to run the command: '
+                                     '{0!s}'.format(cmd))
+        try:
+            p.kill()
+        except OSError:
+            pass
+        return stdout
+
 import sys
-if sys.version_info.major == 2:
+if sys.version_info[0] == 2:
     from urllib2 import URLError, urlopen
     from urlparse import urlsplit
 else:
@@ -34,7 +51,7 @@ class Error(Exception):
     pass
 
 
-if sys.version_info.major == 2:
+if sys.version_info[0] == 2:
 
     class PermissionError(Exception):
         pass
@@ -56,7 +73,7 @@ def get_header(header_name, response):
         The response from calling urlopen().
 
     """
-    if sys.version_info.major == 2:
+    if sys.version_info[0] == 2:
         header = response.info().getheaders(header_name)[0]
     else:
         header = response.getheader(header_name)
@@ -101,13 +118,13 @@ def download_file(url, target_path=None, block_size=8192, progress=False):
     except URLError as e:
         # TODO: raise different errors here for no connection and for
         #       URL not located (and indeed for anything else).
-        raise Error('Cannot locate file: {!s}'.format(url))
+        raise Error('Cannot locate file: {0!s}'.format(url))
     try:
         with open(target_path, 'wb') as flocal:
             if progress:
                 downloaded_size = 0
                 total_size = int(get_header('Content-Length', fremote))
-                sys.stdout.write('Downloading: {!s} ['.format(target_path))
+                sys.stdout.write('Downloading: {0!s} ['.format(target_path))
             while True:
                 buffer = fremote.read(block_size)
                 if not buffer:
@@ -116,14 +133,14 @@ def download_file(url, target_path=None, block_size=8192, progress=False):
                 if progress:
                     downloaded_size += len(buffer)
                     percent_complete = 100 * downloaded_size / total_size
-                    status = '{:5.1f} %]'.format(percent_complete)
+                    status = '{0:5.1f} %]'.format(percent_complete)
                     sys.stdout.write(status)
                     sys.stdout.write('\b' * len(status))
                     sys.stdout.flush()
             if progress:
                 sys.stdout.write('\n')
     except OSError:
-        msg = 'Failed to download {!s} to {!s}'
+        msg = 'Failed to download {0!s} to {1!s}'
         raise Error(msg.format(url, target_path))
     return target_path
 
@@ -152,7 +169,7 @@ def download_miniconda(download_dir=None):
     elif os_name == 'darwin':
         miniconda_installer = 'Miniconda3-latest-MacOSX-x86_64.sh'
     else:
-        raise Error('Cannot install on OS: {!s}'.format(os_name))
+        raise Error('Cannot install on OS: {0!s}'.format(os_name))
     miniconda_url = os.path.join(miniconda_base_url, miniconda_installer)
     if download_dir is not None:
         target_path = os.path.join(download_dir, miniconda_installer)
@@ -185,7 +202,7 @@ def install_miniconda(miniconda_installer, miniconda_install_dir):
     try:
         check_call(command)
     except CalledProcessError:
-        msg = 'Failed to install miniconda in: {}'
+        msg = 'Failed to install miniconda in: {0!s}'
         raise Error(msg.format(miniconda_install_dir))
     return os.path.join(miniconda_install_dir, 'bin')
 
@@ -195,7 +212,7 @@ def create_directory(path):
     try:
         os.makedirs(path)
     except (OSError, PermissionError):
-        msg = ('Cannot create an scmtiles project in "{:s}", '
+        msg = ('Cannot create an scmtiles project in "{0:s}", '
                'permission denied')
         raise Error(msg.format(path))
 
@@ -209,7 +226,7 @@ def clone_repository(repo_url, target):
     try:
         check_call(command)
     except CalledProcessError:
-        msg = ('Failed to clone repository "{:s}", check the URL is correct '
+        msg = ('Failed to clone repository "{0:s}", check the URL is correct '
                'and that you have the necessary access permissions')
         raise Error(msg.format(repo_url))
     except FilenotFoundError:
@@ -222,7 +239,7 @@ def checkout_revision(repo_dir, revision_id):
     try:
         check_call(checkout_command, cwd=repo_dir)
     except CalledProcessError:
-        msg = ('Failed to checkout revision "{:s}", check that the '
+        msg = ('Failed to checkout revision "{0:s}", check that the '
                'commit/branch/tag exists')
         raise Error(msg.format(revision_id))
     return revision_id
@@ -248,7 +265,7 @@ def install_python_package(package_directory, python=None):
     try:
         check_call(command, cwd=package_directory)
     except CalledProcessError:
-        msg = ('Failed to install Python package from "{:s}", '
+        msg = ('Failed to install Python package from "{0:s}", '
                'check permissions')
         raise Error(msg.format(package_directory))
     except FileNotFoundError as e:
@@ -301,23 +318,23 @@ def create_environment(miniconda_path, scmtiles_path, env_name):
     try:
         check_call(create_command)
     except CalledProcessError:
-        msg = 'Failed to create an environment from {:s}, does it exist?'
+        msg = 'Failed to create an environment from {0:s}, does it exist?'
         raise Error(msg.format(requirements))
     except FileNotFoundError:
-        msg = ('Failed to create a conda environment, does {:s} exist '
+        msg = ('Failed to create a conda environment, does {0:s} exist '
                'and is it executable?')
         raise Error(msg.formst(conda))
     locate_command = [conda, 'env', 'list']
     try:
         response = check_output(locate_command)
-    except FileNotFoundError:
-        msg = ('Failed to create a conda environment, does {:s} exist '
+    except (FileNotFoundError, CalledProcessError):
+        msg = ('Failed to create a conda environment, does {0:s} exist '
                'and is it executable?')
         raise Error(msg.formst(conda))
-    env_mapping = {
-        env.split()[0]: env.split()[1]
-        for env in response.decode('utf-8').replace('*', '').split('\n')
-        if env and not env.startswith('#')}
+    env_mapping = dict(
+        [(env.split()[0], env.split()[1])
+         for env in response.decode('utf-8').replace('*', '').split('\n')
+         if env and not env.startswith('#')])
     return env_mapping[env_name]
 
 
@@ -359,7 +376,7 @@ def create_support_script(template, target, base_path, miniconda_path,
         st = os.stat(target)
         os.chmod(target, st.st_mode | stat.S_IXUSR)
     except IOError:
-        raise Error('Failed to write script: {!s}'.format(target))
+        raise Error('Failed to write script: {0!s}'.format(target))
 
 
 def create_support_scripts(base_path, miniconda_path, env_name,
@@ -396,61 +413,61 @@ def main(argv=None):
         # Use command line arguments if none are passed.
         argv = sys.argv
     # Set-up an argument parser and parse all arguments:
-    ap = ArgumentParser()
-    ap.add_argument(
+    ap = OptionParser()
+    ap.add_option(
         '-m', '--miniconda-path', type=str,
         help='root of an existing Miniconda install to be used')
-    ap.add_argument(
+    ap.add_option(
         '-e', '--env-name', type=str,
         help='name for the environment within Miniconda, useful with -m')
-    ap.add_argument(
+    ap.add_option(
         '-r', '--revision', type=str,
         help=('a git revision (commit/branch/tag) to checkout from '
               'the scmtiles repository'))
-    ap.add_argument(
-        'base_directory', metavar='base_dir', type=str,
-        help='base directory for the scmtiles project')
-    argns = ap.parse_args(argv[1:])
-    # Take an absolute reference to the specified base directory, ensuring
-    # all paths are absolute:
-    base_directory = os.path.abspath(argns.base_directory)
+    opts, args = ap.parse_args(argv[1:])
     try:
+        if len(args) != 1:
+            raise Error('expected one argument, the name of the '
+                        'base directory')
+        # Take an absolute reference to the specified base directory, ensuring
+        # all paths are absolute:
+        base_directory = os.path.abspath(args[0])
         # Create the base directory if it doesn't already exist:
         if not os.path.exists(base_directory):
-            print('Creating base directory "{:s}"'.format(base_directory))
+            print('Creating base directory "{0:s}"'.format(base_directory))
             create_directory(base_directory)
         # If an scmtiles source directory already exists then we raise an
         # error, as we have no way of knowing what is in it.
         scmtiles_path = os.path.join(base_directory, 'scmtiles')
         if os.path.exists(scmtiles_path):
-            msg = ('The directory "{!s}" already contains scmtiles source '
+            msg = ('The directory "{0!s}" already contains scmtiles source '
                    'code, please choose an empty directory.')
             raise Error(msg.format(base_directory))
         # Install Miniconda3 if required, the user can specify to use an
         # existing Miniconda install.:
-        if argns.miniconda_path is None:
+        if opts.miniconda_path is None:
             miniconda_path = os.path.join(base_directory, 'miniconda3')
             if os.path.exists(miniconda_path):
-                msg = ('The directory "{!s}" already contains a Mininconda '
+                msg = ('The directory "{0!s}" already contains a Mininconda '
                        'installation, please choose an empty directory.')
                 raise Error(msg.format(base_directory))
             installer_path = download_miniconda(base_directory)
             install_miniconda(installer_path, miniconda_path)
             os.remove(installer_path)
         else:
-            miniconda_path = argns.miniconda_path
+            miniconda_path = opts.miniconda_path
         # Install scmtiles:
         clone_scmtiles(scmtiles_path)
-        if argns.revision is not None:
-            checkout_revision(scmtiles_path, argns.revision)
-        env_name = argns.env_name or 'scmtiles'
+        if opts.revision is not None:
+            checkout_revision(scmtiles_path, opts.revision)
+        env_name = opts.env_name or 'scmtiles'
         env_path = create_environment(miniconda_path, scmtiles_path, env_name)
         install_scmtiles(env_path, scmtiles_path)
         # Create support scripts in the base directory:
         create_support_scripts(base_directory, miniconda_path, env_name,
                                scmtiles_path)
     except Error as e:
-        print('error: {!s}'.format(e), file=sys.stderr)
+        print('error: {0!s}'.format(e), file=sys.stderr)
         return 2
 
 
