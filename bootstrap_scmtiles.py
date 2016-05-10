@@ -37,13 +37,13 @@ except ImportError:
         return stdout
 
 import sys
-if sys.version_info[0] == 2:
-    from urllib2 import URLError, urlopen
-    from urlparse import urlsplit
-else:
+try:
     from urllib.error import URLError
     from urllib.parse import urlsplit
     from urllib.request import urlopen
+except ImportError:
+    from urllib2 import URLError, urlopen
+    from urlparse import urlsplit
 
 
 class Error(Exception):
@@ -229,7 +229,7 @@ def clone_repository(repo_url, target):
         msg = ('Failed to clone repository "{0:s}", check the URL is correct '
                'and that you have the necessary access permissions')
         raise Error(msg.format(repo_url))
-    except FilenotFoundError:
+    except (IOError, OSError):
         raise Error('Failed to clone repository, is git installed?')
     return target
 
@@ -268,7 +268,7 @@ def install_python_package(package_directory, python=None):
         msg = ('Failed to install Python package from "{0:s}", '
                'check permissions')
         raise Error(msg.format(package_directory))
-    except FileNotFoundError as e:
+    except (IOError, OSError) as e:
         if package_directory in str(e):
             msg = ('Cannot install Python package from "{lib:s}", the source '
                    'directory does not exist or cannot be accessed')
@@ -320,14 +320,14 @@ def create_environment(miniconda_path, scmtiles_path, env_name):
     except CalledProcessError:
         msg = 'Failed to create an environment from {0:s}, does it exist?'
         raise Error(msg.format(requirements))
-    except FileNotFoundError:
+    except (IOError, OSError):
         msg = ('Failed to create a conda environment, does {0:s} exist '
                'and is it executable?')
         raise Error(msg.formst(conda))
     locate_command = [conda, 'env', 'list']
     try:
         response = check_output(locate_command)
-    except (FileNotFoundError, CalledProcessError):
+    except (IOError, OSError, CalledProcessError):
         msg = ('Failed to create a conda environment, does {0:s} exist '
                'and is it executable?')
         raise Error(msg.formst(conda))
