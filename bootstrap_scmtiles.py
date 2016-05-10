@@ -323,14 +323,14 @@ def create_environment(miniconda_path, scmtiles_path, env_name):
     except (IOError, OSError):
         msg = ('Failed to create a conda environment, does {0:s} exist '
                'and is it executable?')
-        raise Error(msg.formst(conda))
+        raise Error(msg.format(conda))
     locate_command = [conda, 'env', 'list']
     try:
         response = check_output(locate_command)
     except (IOError, OSError, CalledProcessError):
         msg = ('Failed to create a conda environment, does {0:s} exist '
                'and is it executable?')
-        raise Error(msg.formst(conda))
+        raise Error(msg.format(conda))
     env_mapping = dict(
         [(env.split()[0], env.split()[1])
          for env in response.decode('utf-8').replace('*', '').split('\n')
