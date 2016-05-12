@@ -70,8 +70,7 @@ class TileRunner(metaclass=ABCMeta):
                               self.config.forcing_step_seconds)
         forcing_times = [self.config.start_time + timedelta(seconds=n)
                          for n in forcing_leads]
-        input_file_names = [self.config.input_file_pattern.format(
-                                tile=self.tile, time=t)
+        input_file_names = [self.config.input_file_pattern.format(time=t)
                             for t in forcing_times]
         input_file_paths = [pjoin(self.config.input_directory, f)
                             for f in input_file_names]
