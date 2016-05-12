@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from contextlib import redirect_stderr
+from contextlib import redirect_stdout, redirect_stderr
 from io import StringIO
 import sys
 import unittest
@@ -33,7 +33,7 @@ class Test(unittest.TestCase):
     def test_help(self):
         parser = get_arg_handler()
         args = ['-h']
-        with self.assertRaises(CLIHelp):
+        with self.assertRaises(CLIHelp), redirect_stdout(StringIO()):
             argns = parser.parse_args(args)
 
     def test_no_args(self):
