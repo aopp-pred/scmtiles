@@ -76,7 +76,7 @@ _CONFIG_TEMPLATE = """
 
 start_time = 2016-01-01T00:00:00
 forcing_step_seconds = 1
-forcing_num_steps = 0
+forcing_num_steps = 1
 
 xname = lon
 yname = lat
