@@ -26,7 +26,9 @@ from .config import SCMTilesConfig
 from .exceptions import (CLIError, CLIHelp, ConfigurationError,
                          TileInitializationError, TileRunError)
 from .grid_manager import GridManager
-from ._version import __version__ as scmtiles_version
+
+# Do an absolute import to get the scmtiles version.
+from scmtiles import __version__ as scmtiles_version
 
 
 class TileTask(object):

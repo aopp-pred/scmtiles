@@ -15,16 +15,15 @@
 
 from setuptools import setup
 
+import versioneer
 
-for line in open('scmtiles/_version.py', 'r').readlines():
-    if line.startswith('__version__'):
-        exec(line.strip())
 
 packages = ['scmtiles']
 
 
 setup(name='scmtiles',
-      version=__version__,
+      version=versioneer.get_version(),
+      cmdclass=versioneer.get_cmdclass(),
       description='Toolkit for running a single-column model over a grid',
       author='Andrew Dawson',
       packages=packages,

@@ -335,7 +335,15 @@ def create_environment(miniconda_path, scmtiles_path, env_name):
         [(env.split()[0], env.split()[1])
          for env in response.decode('utf-8').replace('*', '').split('\n')
          if env and not env.startswith('#')])
-    return env_mapping[env_name]
+    env_path = env_mapping[env_name]
+    # Need to install versioneer from pip:
+    pip = os.path.abspath(os.path.join(env_path, 'bin', 'pip'))
+    pip_command = [pip, 'install', 'versioneer']
+    try:
+        check_call(pip_command)
+    except (CalledProcessError, IOError, OSError):
+        raise Error('Failed to install packages with pip')
+    return env_path
 
 
 def create_support_script(template, target, base_path, miniconda_path,
