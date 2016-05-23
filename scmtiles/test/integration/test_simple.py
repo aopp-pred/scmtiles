@@ -34,6 +34,8 @@ class SimpleRunner(TileRunner):
 
     """
 
+    __version__ = '1.0'
+
     def run_cell(self, cell, logger):
         """Run the model for the given cell."""
         # Create a run directory and create links to the template.

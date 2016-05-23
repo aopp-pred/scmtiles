@@ -16,15 +16,16 @@
 from setuptools import setup
 
 
-version = '0.1.dev0'
+for line in open('scmtiles/_version.py', 'r').readlines():
+    if line.startswith('__version__'):
+        exec(line.strip())
 
 packages = ['scmtiles']
 
 
-if __name__ == '__main__':
-    setup(name='scmtiles',
-          version=version,
-          description='Toolkit for running a single-column model over a grid',
-          author='Andrew Dawson',
-          packages=packages,
-          package_dir={'': '.'})
+setup(name='scmtiles',
+      version=__version__,
+      description='Toolkit for running a single-column model over a grid',
+      author='Andrew Dawson',
+      packages=packages,
+)

@@ -17,6 +17,7 @@ from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from datetime import timedelta
 import glob
+import logging
 import os
 from os.path import join as pjoin
 from tempfile import mkdtemp
@@ -24,7 +25,6 @@ from tempfile import mkdtemp
 import xray as xr
 
 from .exceptions import TileInitializationError, TileRunError
-from .util import get_logger
 
 
 #: The result of a single cell simulation.
@@ -104,19 +104,30 @@ class TileRunner(metaclass=ABCMeta):
 
     def run(self):
         """Start the tile's runs in serial."""
+        # Create a logger for this tile:
+        logger = logging.getLogger(name='tile_#{:03d}'.format(self.tile.id))
+        logger.setLevel(logging.DEBUG)
         log_file_name = 'run.{:03d}.{}.log'.format(
             self.tile.id, self.config.start_time.strftime('%Y%m%d%H%M%S'))
         log_file_path = pjoin(self.config.output_directory, log_file_name)
-        with open(log_file_path, 'w') as lf:
-            # Write a header to the run log file.
-            header = 'Tile: {!s}\n'.format(self.tile)
-            lf.write(header)
-            log = get_logger(lf)
-            tile_result = TileResult(id=self.tile.id, cell_results=[])
-            for cell in self.tile.cells():
-                cell_result = self.run_cell(cell, logger=log)
-                tile_result.cell_results.append(cell_result)
-            log('Finished tile #{:03d}'.format(self.tile.id))
+        log_handler = logging.FileHandler(log_file_path)
+        log_handler.setLevel(logging.DEBUG)
+        log_handler.setFormatter(logging.Formatter(
+            '[%(asctime)s] (%(name)s) %(levelname)s %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'))
+        logger.addHandler(log_handler)
+        # Write a message to the main log giving the location of this tile's
+        # log file:
+        base_logger = logging.getLogger('all_tasks')
+        base_logger.info('Logging tile #{:03d} to: {}'.format(
+            self.tile.id, log_file_path))
+        # Run each cell in the tile:
+        logger.info('Run started'.format(self.tile.id))
+        tile_result = TileResult(id=self.tile.id, cell_results=[])
+        for cell in self.tile.cells():
+            cell_result = self.run_cell(cell, logger=logger)
+            tile_result.cell_results.append(cell_result)
+        logger.info('Finished running tile')
         return tile_result
 
     @abstractmethod

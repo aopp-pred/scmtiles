@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import inspect
+import logging
 import os
 import sys
 import time
@@ -24,6 +26,7 @@ from .config import SCMTilesConfig
 from .exceptions import (CLIError, CLIHelp, ConfigurationError,
                          TileInitializationError, TileRunError)
 from .grid_manager import GridManager
+from ._version import __version__ as scmtiles_version
 
 
 class TileTask(object):
@@ -31,6 +34,16 @@ class TileTask(object):
 
     #: Rank of the master task, always 0.
     MASTER = 0
+
+    #: Set up a logger for all tasks to share.
+    logger = logging.getLogger(name='all_tasks')
+    logger.setLevel(logging.DEBUG)
+    log_handler = logging.StreamHandler()
+    log_handler.setLevel(logging.DEBUG)
+    log_handler.setFormatter(logging.Formatter(
+        '[%(asctime)s] (%(name)s) %(levelname)s %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'))
+    logger.addHandler(log_handler)
 
     def __init__(self, runner_class, runner_kwargs=None,
                  decompose_mode='rows'):
@@ -58,21 +71,45 @@ class TileTask(object):
             # the configuration to all workers, as well as assigning a domain
             # for each worker.
             try:
-                print('Initializing tiles...', flush=True)
                 if cliargs is None:
                     cliargs = sys.argv
                 args = get_arg_handler().parse_args(cliargs[1:])
+                # Do some logging, these details are helpful for reproducing
+                # experiments:
+                self.logger.info('Running {}'.format(os.path.abspath(cliargs[0])))
+                self.logger.info('Backend scmtiles is version {}'.format(
+                    scmtiles_version))
+                runner_name = self.runner_class.__name__
+                runner_module = inspect.getfile(self.runner_class)
+                runner_version = getattr(self.runner_class,
+                                         '__version__',
+                                         '<unknown>')
+                runner_msg = ('Tile runner class is {} from module {} '
+                              'at version {}')
+                self.logger.info(runner_msg.format(
+                    runner_name, runner_module, runner_version))
+                # Load the program configuration file:
                 config = SCMTilesConfig.from_file(args.config_file_path)
-                print('- configuration loaded', flush=True)
+                self.logger.info(
+                    'Configuration file loaded successfully: {}'.format(
+                        os.path.abspath(args.config_file_path)))
+                self.logger.info('Configuration is: {!s}'.format(config))
                 if not os.path.exists(config.output_directory):
                     os.makedirs(config.output_directory)
-                    msg = '- created output directory "{}"'
-                    print(msg.format(config.output_directory), flush=True)
-            except (CLIError, ConfigurationError) as e:
-                # An error was detected either in command line arguments or in
-                # the parseing of the configuration file. Print the error
-                # message and make sure all processes exit with code 0.
+                    msg = 'Created output directory: {}'
+                    self.logger.info(msg.format(config.output_directory))
+            except CLIError as e:
+                # An error was detected in the command line arguments. Print
+                # the error message to stderr and make sure all processes exit
+                # with status 1.
                 print(str(e), file=sys.stderr, flush=True)
+                self.comm.bcast((True, 1), root=TileTask.MASTER)
+                sys.exit(1)
+            except ConfigurationError as e:
+                # An error was detected either in the parsing of the
+                # configuration file. Log the error and make sure all
+                # processes exit with code 1.
+                self.logger.critical(str(e))
                 self.comm.bcast((True, 1), root=TileTask.MASTER)
                 sys.exit(1)
             except CLIHelp:
@@ -84,10 +121,10 @@ class TileTask(object):
             except PermissionError:
                 # If creating the output directory failed then exit with an
                 # error message.
-                msg = 'Cannot create output directory "{}", permission denied.'
-                print(msg.format(config.output_directory), file=sys.stderr,
-                      flush=True)
+                msg = 'Cannot create output directory, permission denied: {}'
+                self.logger.critical(msg.format(config.output_directory))
                 self.comm.bcast((True, 2), root=TileTask.MASTER)
+                sys.exit(2)
             else:
                 # Broadcast a no error message to all processes.
                 self.comm.bcast((False, None), root=TileTask.MASTER)
@@ -97,8 +134,8 @@ class TileTask(object):
                 tiles = gm.decompose_by_cells()
             else:
                 tiles = gm.decompose_by_rows()
-            print('- domain tiled for {} processes'.format(num_processes),
-                  flush=True)
+            self.logger.info(
+                'Domain tiled for {} processes'.format(num_processes))
         else:
             # Receive an error package from the master process, if an error
             # condition has been encountered by the master process then exit
@@ -115,42 +152,41 @@ class TileTask(object):
         # Use an MPI scatter to send one domain to each task.
         self.tile = self.comm.scatter(tiles, root=TileTask.MASTER)
         if self.is_master:
-            print('- initialization complete', flush=True)
+            self.logger.info('Initialization complete')
 
     def run(self):
         """Run each task."""
         # Create a tile runner and run all the jobs for the tile.
         if self.is_master:
-            print('Running tiles...', flush=True)
+            self.logger.info('Running tiles')
         try:
             if self.tile is not None:
                 runner = self.runner_class(self.config, self.tile,
                                            **self.runner_kwargs)
         except TileInitializationError as e:
-            msg = 'ERROR: tile #{:03d} failed to initialize: {!s}'
-            print(msg.format(self.tile.id, e), file=sys.stderr, flush=True)
+            msg = 'Runner for tile #{:03d} failed to initialize: {!s}'
+            self.logger.error(msg.format(self.tile.id, e))
             run_info = None
         else:
             if self.tile is not None:
                 try:
                     run_info = runner.run()
                 except TileRunError as e:
-                    msg = 'ERROR: tile #{:03d} failed to run: {!s}'
-                    print(msg.format(self.tile.id, e), file=sys.stderr,
-                          flush=True)
+                    msg = 'Tile #{:03d} failed to run: {!s}'
+                    self.logger.error(msg.format(self.tile.id, e))
                     run_info = None
             else:
                 run_info = None
         # Use an MPI gather call to wait for each process to finish.
         self.run_info = self.comm.gather(run_info, root=TileTask.MASTER)
         if self.is_master:
-            print('- running tiles complete', flush=True)
+            self.logger.info('All tiles have completed running')
 
     def finalize(self):
         if not self.is_master:
             # Only the master needs to finalize.
             return 0
-        print('Finalizing run...', flush=True)
+        self.logger.info('Performing finalization checks')
         # Inspect run_info to determine if any of the tiles failed.
         status = 0
         for tile_result in self.run_info:
@@ -158,14 +194,13 @@ class TileTask(object):
                 # Tiles that failed to run have no information.
                 continue
             if any([cr.outputs is None for cr in tile_result.cell_results]):
-                print('- tile #{:03d} had failed cells:'.format(
-                          tile_result.id),
-                      file=sys.stderr)
+                msg = 'Tile #{:03d} had failed cells'
+                self.logger.error(msg.format(tile_result.id))
                 for cell_result in tile_result.cell_results:
                     if cell_result.outputs is None:
                         status += 1
-                        print('  - failed cell: {!s}'.format(cell_result.cell),
-                              file=sys.stderr)
+                        msg = '- Failed cell: {!s}'
+                        self.logger.error(msg.format(cell_result.cell))
                 sys.stderr.flush()
-        print('- finalization complete')
+        self.logger.info('Run complete (status = {})'.format(status))
         return status
