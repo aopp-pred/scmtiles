@@ -110,7 +110,11 @@ class TileRunner(metaclass=ABCMeta):
         log_file_name = 'run.{:03d}.{}.log'.format(
             self.tile.id, self.config.start_time.strftime('%Y%m%d%H%M%S'))
         log_file_path = pjoin(self.config.output_directory, log_file_name)
-        log_handler = logging.FileHandler(log_file_path)
+        try:
+            log_handler = logging.FileHandler(log_file_path)
+        except PermissionError:
+            msg = 'Cannot write to the output directory: {}'
+            raise TileRunError(msg.format(self.config.output_directory))
         log_handler.setLevel(logging.DEBUG)
         log_handler.setFormatter(logging.Formatter(
             '[%(asctime)s] (%(name)s) %(levelname)s %(message)s',
