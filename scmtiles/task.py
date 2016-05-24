@@ -26,6 +26,7 @@ from .config import SCMTilesConfig
 from .exceptions import (CLIError, CLIHelp, ConfigurationError,
                          TileInitializationError, TileRunError)
 from .grid_manager import GridManager
+from .runner import TileResult
 
 # Do an absolute import to get the scmtiles version.
 from scmtiles import __version__ as scmtiles_version
@@ -168,7 +169,7 @@ class TileTask(object):
         except TileInitializationError as e:
             msg = 'Runner for tile #{:03d} failed to initialize: {!s}'
             self.logger.error(msg.format(self.tile.id, e))
-            run_info = None
+            run_info = TileResult(self.tile.id, None)
         else:
             if self.tile is not None:
                 try:
@@ -176,8 +177,9 @@ class TileTask(object):
                 except TileRunError as e:
                     msg = 'Tile #{:03d} failed to run: {!s}'
                     self.logger.error(msg.format(self.tile.id, e))
-                    run_info = None
+                    run_info = TileResult(self.tile.id, None)
             else:
+                # If the tile is `None` then no work is needed from this task.
                 run_info = None
         # Use an MPI gather call to wait for each process to finish.
         self.run_info = self.comm.gather(run_info, root=TileTask.MASTER)
@@ -193,9 +195,14 @@ class TileTask(object):
         status = 0
         for tile_result in self.run_info:
             if tile_result is None:
-                # Tiles that failed to run have no information.
+                # Tiles that had no work to do have no information.
                 continue
-            if any([cr.outputs is None for cr in tile_result.cell_results]):
+            if tile_result.cell_results is None:
+                # The tile failed to run, indicate this in the status.
+                msg = 'Tile #{:03d} did not run'
+                self.logger.error(msg.format(tile_result.id))
+                status += 1
+            elif any([cr.outputs is None for cr in tile_result.cell_results]):
                 msg = 'Tile #{:03d} had failed cells'
                 self.logger.error(msg.format(tile_result.id))
                 for cell_result in tile_result.cell_results:
@@ -203,6 +210,5 @@ class TileTask(object):
                         status += 1
                         msg = '- Failed cell: {!s}'
                         self.logger.error(msg.format(cell_result.cell))
-                sys.stderr.flush()
         self.logger.info('Run complete (status = {})'.format(status))
         return status
