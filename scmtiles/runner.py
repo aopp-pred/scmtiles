@@ -20,6 +20,7 @@ import glob
 import logging
 import os
 from os.path import join as pjoin
+import re
 from tempfile import mkdtemp
 
 import xray as xr
@@ -96,10 +97,12 @@ class TileRunner(metaclass=ABCMeta):
             if 'concat_dim' in str(e):
                 msg = ("Failed to load input tiles, couldn't concatenate"
                        "over time dimension, is it single-valued?")
-            else:
+            elif re.match('dimensions \[.*\] do not exist', str(e)):
                 msg = ("Failed to select input tile, check grid dimensions "
                        "in configuration match those in the files")
-            raise TileInitializationError(msg)
+            else:
+                msg = "An error occurred while reading input tiles: {!s}"
+            raise TileInitializationError(msg.format(e))
         return tile_ds
 
     def run(self):
