@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from contextlib import redirect_stdout, redirect_stderr
-from io import StringIO
 import os
 from os.path import join as pjoin
 import shutil
@@ -154,12 +152,12 @@ class Test_SimpleRunner(unittest.TestCase):
     def test_rows(self):
         config_file = self.write_config_file()
         cliargs = ['simple', config_file.name]
-        task = TileTask(SimpleRunner, decompose_mode='rows')
+        task = TileTask(SimpleRunner, decompose_mode='rows',
+                        logname='all_rows')
         # Catch both stdout and stderr while doing this.
-        with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
-            task.initialize(cliargs=cliargs)
-            task.run()
-            status = task.finalize()
+        task.initialize(cliargs=cliargs)
+        task.run()
+        status = task.finalize()
         # Close the config file object which deletes it.
         config_file.close()
         self.assertEqual(status, 0)
@@ -168,12 +166,12 @@ class Test_SimpleRunner(unittest.TestCase):
     def test_cells(self):
         config_file = self.write_config_file()
         cliargs = ['simple', config_file.name]
-        task = TileTask(SimpleRunner, decompose_mode='cells')
+        task = TileTask(SimpleRunner, decompose_mode='cells',
+                        logname='all_cells')
         # Catch both stdout and stderr while doing this.
-        with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
-            task.initialize(cliargs=cliargs)
-            task.run()
-            status = task.finalize()
+        task.initialize(cliargs=cliargs)
+        task.run()
+        status = task.finalize()
         # Close the config file object which deletes it.
         config_file.close()
         self.assertEqual(status, 0)
