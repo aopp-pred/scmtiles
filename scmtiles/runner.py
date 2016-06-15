@@ -105,10 +105,11 @@ class TileRunner(metaclass=ABCMeta):
             raise TileInitializationError(msg.format(e))
         return tile_ds
 
-    def run(self):
+    def run(self, parent_logger):
         """Start the tile's runs in serial."""
         # Create a logger for this tile:
-        logger = logging.getLogger(name='tile_#{:03d}'.format(self.tile.id))
+        logger = logging.getLogger(name='{}:tile{:03d}'.format(
+            parent_logger, self.tile.id))
         logger.setLevel(logging.DEBUG)
         log_file_name = 'run.{:03d}.{}.log'.format(
             self.tile.id, self.config.start_time.strftime('%Y%m%d%H%M%S'))
@@ -119,13 +120,14 @@ class TileRunner(metaclass=ABCMeta):
             msg = 'Cannot write to the output directory: {}'
             raise TileRunError(msg.format(self.config.output_directory))
         log_handler.setLevel(logging.DEBUG)
+        log_name = 'tile #{:03d}'.format(self.tile.id)
         log_handler.setFormatter(logging.Formatter(
-            '[%(asctime)s] (%(name)s) %(levelname)s %(message)s',
+            '[%(asctime)s] ({}) %(levelname)s %(message)s'.format(log_name),
             datefmt='%Y-%m-%d %H:%M:%S'))
         logger.addHandler(log_handler)
         # Write a message to the main log giving the location of this tile's
         # log file:
-        base_logger = logging.getLogger('all_tasks')
+        base_logger = logging.getLogger(parent_logger)
         base_logger.info('Logging tile #{:03d} to: {}'.format(
             self.tile.id, log_file_path))
         # Run each cell in the tile:
@@ -135,6 +137,7 @@ class TileRunner(metaclass=ABCMeta):
             cell_result = self.run_cell(cell, logger=logger)
             tile_result.cell_results.append(cell_result)
         logger.info('Finished running tile')
+        log_handler.close()
         return tile_result
 
     @abstractmethod

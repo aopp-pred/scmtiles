@@ -38,18 +38,8 @@ class TileTask(object):
     #: Rank of the master task, always 0.
     MASTER = 0
 
-    #: Set up a logger for all tasks to share.
-    logger = logging.getLogger(name='all_tasks')
-    logger.setLevel(logging.DEBUG)
-    log_handler = logging.StreamHandler()
-    log_handler.setLevel(logging.DEBUG)
-    log_handler.setFormatter(logging.Formatter(
-        '[%(asctime)s] (%(name)s) %(levelname)s %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'))
-    logger.addHandler(log_handler)
-
     def __init__(self, runner_class, runner_kwargs=None,
-                 decompose_mode='rows'):
+                 decompose_mode='rows', logname='all_tasks'):
         """Create an SCM Tiles task."""
         # Define an MPI communicator.
         self.comm = MPI.COMM_WORLD
@@ -63,6 +53,15 @@ class TileTask(object):
         self.runner_class = runner_class
         self.runner_kwargs = runner_kwargs or {}
         self.decompose_mode = decompose_mode
+        #: Set up a logger for all tasks to share.
+        self.logger = logging.getLogger(name=logname)
+        self.logger.setLevel(logging.DEBUG)
+        self.log_handler = logging.StreamHandler(sys.stdout)
+        self.log_handler.setLevel(logging.DEBUG)
+        self.log_handler.setFormatter(logging.Formatter(
+            '[%(asctime)s] (%(name)s) %(levelname)s %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'))
+        self.logger.addHandler(self.log_handler)
 
     def initialize(self, cliargs=None):
         """
@@ -79,7 +78,8 @@ class TileTask(object):
                 args = get_arg_handler().parse_args(cliargs[1:])
                 # Do some logging, these details are helpful for reproducing
                 # experiments:
-                self.logger.info('Running {}'.format(os.path.abspath(cliargs[0])))
+                self.logger.info('Running {}'.format(
+                    os.path.abspath(cliargs[0])))
                 self.logger.info('Backend scmtiles is version {}'.format(
                     scmtiles_version))
                 runner_name = self.runner_class.__name__
@@ -173,7 +173,7 @@ class TileTask(object):
         else:
             if self.tile is not None:
                 try:
-                    run_info = runner.run()
+                    run_info = runner.run(self.logger.name)
                 except TileRunError as e:
                     msg = 'Tile #{:03d} failed to run: {!s}'
                     self.logger.error(msg.format(self.tile.id, e))
@@ -189,6 +189,7 @@ class TileTask(object):
     def finalize(self):
         if not self.is_master:
             # Only the master needs to finalize.
+            self.log_handler.close()
             return 0
         self.logger.info('Performing finalization checks')
         # Inspect run_info to determine if any of the tiles failed.
@@ -211,4 +212,5 @@ class TileTask(object):
                         msg = '- Failed cell: {!s}'
                         self.logger.error(msg.format(cell_result.cell))
         self.logger.info('Run complete (status = {})'.format(status))
+        self.log_handler.close()
         return status
