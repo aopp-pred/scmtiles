@@ -37,7 +37,8 @@ class Test_from_file(unittest.TestCase):
             output_directory='/tmp',
             work_directory='/tmp',
             template_directory='/tmp',
-            input_file_pattern='scm_in.2009-04-06T01:15:00.nc')
+            input_file_pattern='scm_in.2009-04-06T01:15:00.nc',
+            archive_directory='/dev/null')
 
     def _config_from_dict(self, config_dict, section_name='[default]'):
         config_pairs = ["{!s} = {!s}".format(key, value)
