@@ -41,12 +41,13 @@ class SCMTilesConfig(object):
                                     ('output_directory', _to_path),
                                     ('work_directory', _to_path),
                                     ('template_directory', _to_path),
-                                    ('input_file_pattern', str))}
+                                    ('input_file_pattern', str),
+                                    ('archive_directory', str))}
 
     def __init__(self, start_time, forcing_step_seconds, forcing_num_steps,
                  xname, yname, xsize, ysize, input_directory, output_directory,
                  work_directory, template_directory, input_file_pattern,
-                 strict=True):
+                 archive_directory, strict=True):
         """
         Create an `SCMTilesConfig` object by specifying configuration
         items.
@@ -79,6 +80,7 @@ class SCMTilesConfig(object):
         self.work_directory = work_directory
         self.output_directory = output_directory
         self.input_file_pattern = input_file_pattern
+        self.archive_directory = archive_directory
 
     @staticmethod
     def from_file(config_file_path, strict=True):
