@@ -14,6 +14,10 @@ In order to use scmtiles you must write your own runner class, a subclass of
 `run_cell()` method contains all the specific logic and operations required to
 run a particular SCM at a single location in space.
 
+For an example of use see the project
+[openifs-scmtiles](https://github.com/aopp-pred/openifs-scmtiles) which
+implements a tile runner for the OpenIFS SCM.
+
 
 ## Installation
 
@@ -38,6 +42,26 @@ installed:
 * [pytest](http://doc.pytest.org/)
 * [pep8](https://pypi.python.org/pypi/pep8)
 
+### Bootstrapping
+
+For a no-hassle installation of scmtiles plus all dependencies (including
+Python itself) you can use the bundled `bootstrap_scmtiles.py` script. This
+script requires only Python 2.6+ to run, and will download and install
+[miniconda](http://conda.pydata.org/miniconda.html), create a conda environment
+for scmtiles with all dependencies installed, and then install scmtiles into
+the environment. Basic usage is:
+
+    curl -o bootstrap_scmtiles.py https://raw.githubusercontent.com/aopp-pred/scmtiles/master/bootstrap_scmtiles.py
+    python bootstrap_scmtiles.py my_project_name
+
+which will install miniconda to `my_project_name/miniconda3` and create an
+environment with name `scmtiles`. You can change the name of the environment
+and even specify an existing miniconda installation to use instead of making
+a new one. You can also set the revision of scmtiles you'd like to install,
+which can be any valid git version identifier (e.g., commit hash, tag, branch
+name). For help use:
+
+    python bootstrap_scmtiles.py -h
 
 ## Contributing
 
