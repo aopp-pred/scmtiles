@@ -14,6 +14,10 @@ In order to use scmtiles you must write your own runner class, a subclass of
 `run_cell()` method contains all the specific logic and operations required to
 run a particular SCM at a single location in space.
 
+For an example of use see the project
+[openifs-scmtiles](https://github.com/aopp-pred/openifs-scmtiles) which
+implements a tile runner for the OpenIFS SCM.
+
 
 ## Installation
 
