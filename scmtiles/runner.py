@@ -189,7 +189,7 @@ class TileRunner(metaclass=ABCMeta):
         if self.tile.type == 'linear':
             # Convert the grid coordinate back to latitude and longitude.
             # NB: cell_ds.unstack('grid') does not appear to work.
-            lat, lon = cell_ds['grid'].data
+            lat, lon = cell_ds['grid'].values
             cell_ds.coords.update({self.config.yname: lat,
                                    self.config.xname: lon})
             cell_ds = cell_ds.drop('grid')
