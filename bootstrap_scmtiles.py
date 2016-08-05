@@ -15,6 +15,8 @@
 # limitations under the License.
 from __future__ import absolute_import, division, print_function
 
+# This program must be compatible with Python 2.6+ so use the older optparse
+# module instead of argparse
 from optparse import OptionParser
 import os
 import stat
@@ -22,6 +24,7 @@ from subprocess import check_call, CalledProcessError
 try:
     from subprocess import check_output
 except ImportError:
+    # Define check_output for Python 2.6:
     from subprocess import Popen, PIPE
 
     def check_output(cmd):
@@ -42,6 +45,7 @@ try:
     from urllib.parse import urlsplit
     from urllib.request import urlopen
 except ImportError:
+    # Python 2 has a different library staructure:
     from urllib2 import URLError, urlopen
     from urlparse import urlsplit
 
@@ -52,6 +56,8 @@ class Error(Exception):
 
 
 if sys.version_info[0] == 2:
+    # PermissionError is not defined in Python 2, so we define a dummy
+    # PermissionError so we can still catch it on Python 3:
 
     class PermissionError(Exception):
         pass
@@ -115,7 +121,7 @@ def download_file(url, target_path=None, block_size=8192, progress=False):
         target_path = os.path.basename(urlsplit(url).path)
     try:
         fremote = urlopen(url)
-    except URLError as e:
+    except URLError:
         # TODO: raise different errors here for no connection and for
         #       URL not located (and indeed for anything else).
         raise Error('Cannot locate file: {0!s}'.format(url))
@@ -250,7 +256,7 @@ def clone_scmtiles(scmtiles_dir):
     Clone the scmtiles git repository to a specified location.
 
     """
-    scmtiles_url = 'git@gitlab.physics.ox.ac.uk:dawson/scmtiles.git'
+    scmtiles_url = 'https://github.com/aopp-pred/scmtiles.git'
     return clone_repository(scmtiles_url, scmtiles_dir)
 
 
@@ -346,8 +352,8 @@ def create_environment(miniconda_path, scmtiles_path, env_name):
     return env_path
 
 
-def create_support_script(template, target, base_path, miniconda_path,
-                          env_name, scmtiles_path):
+def create_support_script(template, target, miniconda_path, env_name,
+                          scmtiles_path):
     """
     Create a support shell script.
 
@@ -359,9 +365,6 @@ def create_support_script(template, target, base_path, miniconda_path,
 
     * target
         The path to the resulting shell script.
-
-    * base_path
-        The path to the base project directory.
 
     * miniconda_path
         The path to the root of the miniconda installation.
@@ -411,9 +414,9 @@ def create_support_scripts(base_path, miniconda_path, env_name,
     update_scmtiles_path = os.path.join(base_path, 'update_scmtiles.sh')
     scmenv_path = os.path.join(base_path, 'scmenv.sh')
     create_support_script(_UPDATE_SCMTILES_TEMPLATE, update_scmtiles_path,
-                          base_path, miniconda_path, env_name, scmtiles_path)
+                          miniconda_path, env_name, scmtiles_path)
     create_support_script(_SCMENV_TEMPLATE, scmenv_path,
-                          base_path, miniconda_path, env_name, scmtiles_path)
+                          miniconda_path, env_name, scmtiles_path)
 
 
 def main(argv=None):
