@@ -15,6 +15,7 @@ mpi4py
 python-dateutil
 xarray<0.8
 netcdf4
+hdf4
 dask>=0.8.1
 
 # Testing dependencies:
