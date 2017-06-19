@@ -13,10 +13,10 @@ setuptools
 # Runtime dependencies:
 mpi4py
 python-dateutil
-xarray<0.8
+xarray
 netcdf4
 hdf4
-dask>=0.8.1
+dask
 
 # Testing dependencies:
 pytest
