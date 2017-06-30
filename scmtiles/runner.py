@@ -23,7 +23,7 @@ from os.path import join as pjoin
 import re
 from tempfile import mkdtemp
 
-import xray as xr
+import xarray as xr
 
 from .exceptions import TileInitializationError, TileRunError
 
