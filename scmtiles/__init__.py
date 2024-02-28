@@ -13,3 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+try:
+    from ._version import __version__
+except ImportError:
+    __version__ == "unknown"
