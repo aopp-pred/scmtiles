@@ -30,7 +30,6 @@ The following dependencies are required to run scmtiles:
 * [xarray](http://xarray.pydata.org/en/v0.7.1/)
 * [netcdf4](http://unidata.github.io/netcdf4-python/)
 * [dask](http://dask.pydata.org/)
-* [versioneer](https://github.com/warner/python-versioneer)
 
 Once you have the dependencies installed you can install scmtiles with:
 
