@@ -5,7 +5,7 @@
 #
 
 # Python dependency:
-python>=3.5
+python>=3.8
 
 # Build dependencies:
 setuptools
@@ -20,4 +20,4 @@ dask
 
 # Testing dependencies:
 pytest
-pep8
+pycodestyle

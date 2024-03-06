@@ -1,0 +1,43 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+    "setuptools>=42",
+    "setuptools_scm",
+    "wheel",
+]
+
+[project]
+name = "scmtiles"
+description = "Toolkit for running a single-column model over a grid"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "Andrew Dawson"},
+]
+requires-python = ">=3.8"
+dynamic = [
+    "version",
+    "readme",
+]
+dependencies = [
+    "xarray",
+    "netcdf4",
+    "dask",
+    "mpi4py",
+    "python-dateutil",
+]
+
+[project.urls]
+repository = "https://github.com/aopp-pred/scmtiles"
+
+[tool.setuptools]
+license-files = ["LICENSE"]
+
+[tool.setuptools.dynamic]
+readme = {file = "README.md", content-type = "text/markdown"}
+
+[tool.setuptools_scm]
+write_to = "scmtiles/_version.py"
+
+[tool.pytest]
+addopts = "-vrsx"
+testpaths = "scmtiles"
