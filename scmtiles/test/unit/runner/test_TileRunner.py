@@ -34,8 +34,7 @@ class Test_create_run_directory(unittest.TestCase):
         tile = MagicMock(name='Tile')
         # Don't have permission to write to the root directory.
         config.work_directory = '/'
-        error_message = ('Cannot create run directory in "/", '
-                         'permission denied.')
+        error_message = 'Cannot create run directory in "/".'
         # Patch _load_tile_data so it doesn't do anything.
         with patch.object(ConcreteTileRunner, '_load_tile_data') as mock_ltd:
             mock_ltd.return_value = None

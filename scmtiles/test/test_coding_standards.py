@@ -16,7 +16,7 @@
 import os
 import unittest
 
-import pep8
+import pycodestyle
 
 import scmtiles
 
@@ -24,7 +24,7 @@ import scmtiles
 class TestCodingStandards(unittest.TestCase):
 
     def test_pep8_compliance(self):
-        pep8style = pep8.StyleGuide(quiet=False)
+        pep8style = pycodestyle.StyleGuide(quiet=False)
         base_paths = [os.path.dirname(scmtiles.__file__)]
         result = pep8style.check_files(base_paths)
         self.assertEqual(result.total_errors, 0, "Found style issues.")

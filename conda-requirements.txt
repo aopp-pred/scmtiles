@@ -20,4 +20,4 @@ dask
 
 # Testing dependencies:
 pytest
-pep8
+pycodestyle

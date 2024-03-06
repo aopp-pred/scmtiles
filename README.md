@@ -21,9 +21,8 @@ implements a tile runner for the OpenIFS SCM.
 
 ## Installation
 
-scmtiles reuires Python 3.5 or higher and
-[setuptools](https://setuptools.readthedocs.io/en/latest/) for installation
-The following dependencies are required to run scmtiles:
+scmtiles reuires Python 3.8 or higher. The following dependencies are
+required to run scmtiles:
 
 * [mpi4py](http://mpi4py.readthedocs.io/)
 * [dateutil](https://dateutil.readthedocs.io/)

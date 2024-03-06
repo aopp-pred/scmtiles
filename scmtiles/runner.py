@@ -97,7 +97,7 @@ class TileRunner(metaclass=ABCMeta):
             if 'concat_dim' in str(e):
                 msg = ("Failed to load input tiles, couldn't concatenate"
                        "over time dimension, is it single-valued?")
-            elif re.match('dimensions \[.*\] do not exist', str(e)):
+            elif re.match(r'dimensions \[.*\] do not exist', str(e)):
                 msg = ("Failed to select input tile, check grid dimensions "
                        "in configuration match those in the files")
             else:
@@ -192,7 +192,7 @@ class TileRunner(metaclass=ABCMeta):
             lat, lon = cell_ds['grid'].values.tolist()
             cell_ds.coords.update({self.config.yname: lat,
                                    self.config.xname: lon})
-            cell_ds = cell_ds.drop('grid')
+            cell_ds = cell_ds.drop_vars('grid')
         return cell_ds
 
     def create_run_directory(self):
@@ -208,8 +208,8 @@ class TileRunner(metaclass=ABCMeta):
         try:
             run_directory = mkdtemp(dir=self.config.work_directory,
                                     prefix='run.')
-        except PermissionError:
-            msg = 'Cannot create run directory in "{}", permission denied.'
+        except (OSError, PermissionError):
+            msg = 'Cannot create run directory in "{}".'
             raise TileRunError(msg.format(self.config.work_directory))
         return run_directory
 

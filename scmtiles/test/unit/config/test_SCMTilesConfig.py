@@ -85,16 +85,16 @@ class Test_from_file(unittest.TestCase):
     def test_missing_default_section(self):
         config_dict = self.config_dict
         config_text = self._config_from_dict(config_dict, section_name='[a]')
-        error_message = ('Missing section "\[default\]" in configuration '
-                         'file "{}".')
+        error_message = (r'Missing section "\[default\]" in configuration '
+                         r'file "{}".')
         self._check_exception(config_text, ConfigurationError, error_message)
 
     def test_missing_option(self):
         config_dict = self.config_dict
         del config_dict['start_time']
         config_text = self._config_from_dict(config_dict)
-        error_message = ('Configuration option "start_time" is missing '
-                         'from section "\[default\]" in file "{}".')
+        error_message = (r'Configuration option "start_time" is missing '
+                         r'from section "\[default\]" in file "{}".')
         self._check_exception(config_text, ConfigurationError, error_message)
 
     def test_from_file_bad_time_type(self):
