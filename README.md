@@ -49,7 +49,7 @@ script requires bash to run, and will (optionally) download and install
 for scmtiles with all dependencies installed, and then install scmtiles into
 the environment. Basic usage is:
 
-    curl -o bootstrap_scmtiles.py https://raw.githubusercontent.com/aopp-pred/scmtiles/master/bootstrap_scmtiles.sh
+    curl -o bootstrap_scmtiles.sh https://raw.githubusercontent.com/aopp-pred/scmtiles/master/bootstrap_scmtiles.sh
     bash bootstrap_scmtiles.sh my_project_name
 
 which will install miniconda to `my_project_name/miniconda3` and create an
